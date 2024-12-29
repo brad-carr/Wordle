@@ -3,10 +3,10 @@ using Wordle;
 
 const int WordLength = 5;
 var remainingWords   = WordListReader.ReadLines().ToArray();
-var console          = new Wordle.Console();
+var console          = new RicherConsole();
 var solution         = Enumerable.Repeat(' ', WordLength).ToArray();
 var numAttempts      = 0;
-var rand             = new Random(20241229);
+var rand             = new Random(394857);
 var solvedFeedback   = new string('c', WordLength);
 
 while (true){
@@ -43,7 +43,7 @@ while (true){
     }
 
     if (feedback == solvedFeedback){
-        console.WriteLine($"Solved on the $green({numAttempts.Ordinalize()}) attempt");
+        console.WriteLine($"$rainbow(Solved on the {numAttempts.Ordinalize()} attempt)");
         Environment.Exit(0);
     }
 
