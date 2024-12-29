@@ -6,7 +6,7 @@ var remainingWords   = WordListReader.ReadLines().ToArray();
 var console          = new RicherConsole();
 var solution         = Enumerable.Repeat(' ', WordLength).ToArray();
 var numAttempts      = 0;
-var rand             = new Random(394857);
+var rand             = new Random(DateTime.Today.Year*10000 + DateTime.Today.Month*100+DateTime.Today.Day);
 var solvedFeedback   = new string('c', WordLength);
 
 while (true){
