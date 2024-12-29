@@ -2,7 +2,7 @@
 using Wordle;
 
 const int WordLength = 5;
-var remainingWords   = StreamWordList().ToArray();
+var remainingWords   = WordListReader.ReadLines().ToArray();
 var console          = new Wordle.Console();
 var solution         = Enumerable.Repeat(' ', WordLength).ToArray();
 var numAttempts      = 0;
@@ -35,6 +35,10 @@ while (true){
             console.WriteLine($"invalid feedback; expected {"character".ToQuantity(WordLength)}");
             continue;
         }
+        if (!feedback.All(Feedback.IsValid)){
+            console.WriteLine("invalid feedback; use only letters $yellow(C), $yellow(M) or $yellow(N)");
+            continue;
+        }
         break;
     }
 
@@ -46,47 +50,31 @@ while (true){
     var operations = feedback
         .Zip(suggestion)
         .Select((x, i) => (f:x.First, c:x.Second, i))
-        .OrderBy(x => x.f);
+        .OrderBy(x => x.f); // ensures processing order 'c' -> 'm' -> 'n'
 
     foreach (var (f, c, i) in operations){
-        if (f == 'c'){
+        switch (f) {
+        case Feedback.Correct:
             if (solution[i] == c) continue;
             solution[i] = c;
             remainingWords = remainingWords.Where(w => w[i] == c).ToArray();
-        }
-        else if (f == 'n'){
+            break;
+        case Feedback.Misplaced:
+            var unsolvedIndexes = Enumerable.Range(0, WordLength).Where(j => j!=i && solution[j] == ' ');
+            remainingWords = remainingWords.Where(w => w[i] != c && unsolvedIndexes.Any(u => w[u] == c)).ToArray();
+            break;
+        case Feedback.NoMoreOccurrences:
             for (var j=0; j<WordLength; j++){
                 if (solution[j] == ' '){
                     remainingWords = remainingWords.Where(w => w[j] != c).ToArray();
                 }
             }
-        }
-        else if (f == 'm'){
-            var unsolvedIndexes = Enumerable.Range(0, WordLength).Where(j => j!=i && solution[j] == ' ');
-            remainingWords = remainingWords.Where(w => w[i] != c && unsolvedIndexes.Any(u => w[u] == c)).ToArray();
+            break;
         }
     }
 
     if (remainingWords.Length == 0){
         console.WriteLine("$red(No remaining words, check input)");
         Environment.Exit(1);
-    }
-}
-
-static IEnumerable<string> StreamWordList() {
-    var assembly = System.Reflection.Assembly.GetExecutingAssembly() ?? throw new Exception("assembly is null");
-    var resourceName = "Wordle.wordlist.txt";
-
-    using var stream = assembly.GetManifestResourceStream(resourceName) ?? throw new Exception("resource not found");
-    using var reader = new StreamReader(stream);
-    if (reader == null) yield break;
-    
-
-    while (true) {
-        var content = reader.ReadLine();
-        if (content == null) yield break;
-        
-        content = content.Trim();
-        if (content.Length > 0) yield return content;
     }
 }
