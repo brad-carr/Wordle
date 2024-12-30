@@ -1,3 +1,4 @@
+using System.IO.Compression;
 using System.Web;
 using Humanizer;
 
@@ -48,6 +49,7 @@ namespace Wordle
                 var operations = feedback
                     .Zip(suggestion)
                     .Select((x, i) => (f: x.First, c: x.Second, i))
+                    .Where(x => solution[x.i] != x.c) // skip already solved positional indexes
                     .OrderBy(x => x.f); // ensures processing order 'c' -> 'm' -> 'n'
 
                 foreach (var (f, c, i) in operations)
@@ -55,8 +57,6 @@ namespace Wordle
                     switch (f)
                     {
                         case Feedback.Correct:
-                            if (solution[i] == c)
-                                continue;
                             solution[i] = c;
                             remainingWords = remainingWords.Where(w => w[i] == c).ToArray();
                             break;

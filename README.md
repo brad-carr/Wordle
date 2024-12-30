@@ -2,7 +2,7 @@
 
 ## Overview
 
-This C# program implements a basic algorithm for solving Wordle puzzles issued daily by the New York Times. See [link](https://www.nytimes.com/games/wordle/index.html).
+This C# program implements a basic algorithm for solving Wordle puzzles issued daily by the New York Times, see [link](https://www.nytimes.com/games/wordle/index.html).
 
 ## Algorithm
 
@@ -33,8 +33,8 @@ Suggestion 1: FLINT - out of 2315 possibilities
 Feedback - [C]orrect [M]isplaced [N]o more occurrences? nnnnn
 Suggestion 2: HOVER - out of 535 possibilities
 Feedback - [C]orrect [M]isplaced [N]o more occurrences? nmnnn
-Suggestion 3: GUMBO - out of 11 possibilities
-Feedback - [C]orrect [M]isplaced [N]o more occurrences? nnccc
+Suggestion 3: BUXOM - out of 11 possibilities
+Feedback - [C]orrect [M]isplaced [N]o more occurrences? mnnmm
 Suggestion 4: MAMBO - out of 1 possibility
 Solved on the 4th attempt
 ```
