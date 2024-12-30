@@ -2,7 +2,7 @@ using System.Text;
 
 namespace Wordle;
 
-public class RicherConsole{
+public class RicherConsole : IConsole {
     static readonly Dictionary<string, ConsoleColor> ColorMap = Enum
         .GetNames<ConsoleColor>()
         .Zip(Enum.GetValues<ConsoleColor>())
