@@ -4,31 +4,40 @@ namespace Wordle;
 
 public class RicherConsole : IConsole
 {
-    static readonly Dictionary<string, ConsoleColor> ColorMap = Enum.GetNames<ConsoleColor>()
-        .Zip(Enum.GetValues<ConsoleColor>())
-        .ToDictionary(z => z.First.ToLower(), z => z.Second, StringComparer.OrdinalIgnoreCase);
+    private static readonly Dictionary<string, ConsoleColor> ColorMap =
+        Enum.GetNames<ConsoleColor>()
+            .Zip(Enum.GetValues<ConsoleColor>())
+            .ToDictionary(z => z.First.ToLower(), z => z.Second, StringComparer.OrdinalIgnoreCase);
 
-    public RicherConsole()
+    private IConsole _inner;
+
+    public RicherConsole(IConsole inner)
     {
-        if (!Console.IsOutputRedirected)
-        {
-            Console.Clear();
-        }
+        _inner = inner;
+        Clear();
         ResetColors();
     }
+
+    public ConsoleColor BackgroundColor
+    {
+        get => _inner.BackgroundColor;
+        set => _inner.BackgroundColor = value;
+    }
+
+    public ConsoleColor ForegroundColor
+    {
+        get => _inner.ForegroundColor;
+        set => _inner.ForegroundColor = value;
+    }
+
+    public void Clear() => _inner.Clear();
 
     public string? ReadLine()
     {
-        Console.ForegroundColor = ConsoleColor.Yellow;
-        var input = Console.ReadLine();
+        ForegroundColor = ConsoleColor.Yellow;
+        var input = _inner.ReadLine();
         ResetColors();
         return input;
-    }
-
-    public void WriteLine(string text)
-    {
-        Write(text);
-        Console.WriteLine();
     }
 
     public void Write(string text)
@@ -41,7 +50,7 @@ public class RicherConsole : IConsole
         {
             if (c == '$')
             {
-                Console.Write(buf.ToString());
+                _inner.Write(buf.ToString());
                 buf.Clear();
             }
             else if (c == '(')
@@ -54,7 +63,7 @@ public class RicherConsole : IConsole
                 );
                 if (!rainbow)
                 {
-                    Console.ForegroundColor = nextColor = ColorMap[buf.ToString()];
+                    ForegroundColor = nextColor = ColorMap[buf.ToString()];
                 }
 
                 buf.Clear();
@@ -67,7 +76,7 @@ public class RicherConsole : IConsole
                 }
                 else
                 {
-                    Console.Write(buf.ToString());
+                    _inner.Write(buf.ToString());
                 }
 
                 buf.Clear();
@@ -78,21 +87,30 @@ public class RicherConsole : IConsole
                 buf.Append(c);
             }
         }
-        Console.Write(buf);
+        _inner.Write(buf.ToString());
+    }
+
+    public void Write(char c) => _inner.Write(c);
+
+    public void WriteLine() => _inner.WriteLine();
+
+    public void WriteLine(string text)
+    {
+        Write(text);
+        WriteLine();
     }
 
     private void WriteRainbow(StringBuilder buf)
     {
-        Console.ForegroundColor = Console.BackgroundColor;
+        _inner.ForegroundColor = BackgroundColor;
         RotateForegroundColor();
 
         foreach (var k in buf.ToString())
         {
-            Console.Write(k);
-
+            Write(k);
             RotateForegroundColor();
 
-            if (Console.ForegroundColor == Console.BackgroundColor)
+            if (ForegroundColor == BackgroundColor)
             {
                 RotateForegroundColor();
             }
@@ -100,10 +118,12 @@ public class RicherConsole : IConsole
     }
 
     private void RotateForegroundColor() =>
-        Console.ForegroundColor =
-            Console.ForegroundColor == ConsoleColor.White
-                ? ConsoleColor.Black
-                : Console.ForegroundColor + 1;
+        ForegroundColor =
+            ForegroundColor == ConsoleColor.White ? ConsoleColor.Black : ForegroundColor + 1;
 
-    public void ResetColors() => Console.ForegroundColor = ConsoleColor.Gray;
+    public void ResetColors()
+    {
+        BackgroundColor = ConsoleColor.Black;
+        ForegroundColor = ConsoleColor.Gray;
+    }
 }
