@@ -10,7 +10,7 @@ namespace Wordle
 
         public (string? solution, int numGuesses) Solve(DateOnly publicationDate)
         {
-            var remainingWords = WordListReader.ReadLines().ToArray();
+            var remainingWords = WordListReader.EnumerateLines().ToArray();
             var solution = Enumerable.Repeat(' ', WordLength).ToArray();
             var numAttempts = 0;
             var rand = new Random(

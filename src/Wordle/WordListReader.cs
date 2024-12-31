@@ -2,7 +2,7 @@ namespace Wordle;
 
 public static class WordListReader
 {
-    public static IEnumerable<string> ReadLines()
+    public static IEnumerable<string> EnumerateLines()
     {
         var assembly =
             System.Reflection.Assembly.GetExecutingAssembly()
