@@ -26,6 +26,12 @@ public class SolverTests
         new[] { "flint|2315|nnnnn", "hover|535|nmnnn", "buxom|11|mnnmm", "mambo|1|ccccc" }
     )]
     [InlineData("2024-12-30", "stare", 2, new[] { "rouse|2315|mnnmc", "stare|10|ccccc" })]
+    [InlineData(
+        "2024-12-31",
+        "lemur",
+        3,
+        new[] { "dealt|2315|ncnmn", "helix|25|ncmnn", "lemur|13|ccccc" }
+    )]
     public void Solve_ReturnsCorrectSolutionAndGuesses(
         string publicationDateString,
         string expectedSolution,
@@ -71,7 +77,8 @@ public class SolverTests
         var console = Mock.Of<IConsole>();
         var feedbackProviderMock = new Mock<IFeedbackProvider>(MockBehavior.Strict);
         feedbackProviderMock
-            .Setup(mock => mock.GetFeedback(It.IsAny<string>(), It.IsAny<int>())).Returns("nnnnn");
+            .Setup(mock => mock.GetFeedback(It.IsAny<string>(), It.IsAny<int>()))
+            .Returns("nnnnn");
 
         var solver = new Solver(console, feedbackProviderMock.Object);
 
@@ -93,7 +100,8 @@ public class SolverTests
         var console = Mock.Of<IConsole>();
         var feedbackProviderMock = new Mock<IFeedbackProvider>(MockBehavior.Strict);
         feedbackProviderMock
-            .Setup(mock => mock.GetFeedback(It.IsAny<string>(), It.IsAny<int>())).Returns((string)null!);
+            .Setup(mock => mock.GetFeedback(It.IsAny<string>(), It.IsAny<int>()))
+            .Returns((string)null!);
 
         var solver = new Solver(console, feedbackProviderMock.Object);
 
