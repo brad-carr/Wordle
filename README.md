@@ -50,3 +50,13 @@ Suggestion 3: DECRY - out of 3 possibilities
 Feedback - [C]orrect [M]isplaced [N]o more occurrences? ccccc
 Solved on the 3rd attempt
 ```
+
+## Notes and Limitations
+
+This solver uses only the list of valid solutions, excluding the larger set of valid _guess words_, which may be incorporated in future optimizations, where we are looking to eliminate as many letters as possible from the remaining set of untapped letters.
+
+A major weakness of this solver is making correctly placed letters sticky, leading to inefficiencies when multiple options exist. For instance, starting with WATCH and confirming the last four letters leaves B, C, L, M, and P as possible first letters, risking exhaustion of all five remaining guesses. To ensure a solution in exactly two more attempts, we could guess CLIMB, then use elimination — falling back to P if needed — to identify the correct letter before submitting the final answer. I plan to incorporate this technique at a later date once I spot a scenario where the algorithm fails in 6 guesses.
+
+## Credits
+
+File [wordlist.txt](https://github.com/brad-carr/WordleSolver/blob/master/src/Wordle/wordlist.txt) was cloned from [wordlist.txt](https://gist.github.com/cfreshman/a03ef2cba789d8cf00c08f767e0fad7b); thanks to [Cyrus Freshman](https://gist.github.com/cfreshman) for this.
