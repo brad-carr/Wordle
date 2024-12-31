@@ -1,5 +1,3 @@
-using System.IO.Compression;
-using System.Web;
 using Humanizer;
 
 namespace Wordle
