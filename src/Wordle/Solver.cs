@@ -57,6 +57,8 @@ public sealed class Solver(IConsole console, IFeedbackProvider feedbackProvider)
                 .Where(x => solution[x.i] != x.c) // skip already solved positional indexes
                 .OrderBy(x => x.f); // ensures processing order 'c' -> 'm' -> 'n'
 
+            var misplacedLetters = new HashSet<char>();
+
             foreach (var (f, c, i) in operations)
             {
                 switch (f)
@@ -66,6 +68,7 @@ public sealed class Solver(IConsole console, IFeedbackProvider feedbackProvider)
                         remainingWords = remainingWords.Where(w => w[i] == c).ToArray();
                         break;
                     case Feedback.Misplaced:
+                        misplacedLetters.Add(c);
                         var unsolvedIndexes = Enumerable
                             .Range(0, WordLength)
                             .Where(j => j != i && solution[j] == ' ');
@@ -74,6 +77,13 @@ public sealed class Solver(IConsole console, IFeedbackProvider feedbackProvider)
                             .ToArray();
                         break;
                     case Feedback.NoMoreOccurrences:
+                        if (misplacedLetters.Contains(c))
+                        {
+                            // skip if same character misplaced elsewhere
+                            // required for seed test to pass: [InlineData(20241295, "mambo")]
+                            break;
+                        }
+
                         for (var j = 0; j < WordLength; j++)
                         {
                             if (solution[j] == ' ')
