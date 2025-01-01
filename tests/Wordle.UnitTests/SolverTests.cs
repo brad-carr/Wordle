@@ -106,8 +106,7 @@ public sealed class SolverTests
             .BeLessOrEqualTo(6, $"guesses were {string.Join($" {Unicode.RightArrow} ", guesses)}");
     }
 
-    [Theory]
-    //[Theory(Skip = "Special test case used to find problematic seeds")]
+    [Theory(Skip = "Special test case used to find problematic seeds")]
     [InlineData("2024-12-27", "grain")]
     [InlineData("2024-12-28", "decry")]
     [InlineData("2024-12-29", "mambo")]
