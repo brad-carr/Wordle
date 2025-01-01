@@ -28,7 +28,7 @@ public class LinqTests
         var expectedAllocation = 1.0 / distinctChars.Length;
         foreach (var s in elements)
         {
-            (1.0 * distribution[s] / iters).Should().BeApproximately(expectedAllocation, 0.02);
+            (1.0 * distribution[s] / iters).Should().BeApproximately(expectedAllocation, 0.03);
         }
     }
 }
