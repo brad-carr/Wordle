@@ -1,7 +1,5 @@
 ﻿namespace Wordle.UnitTests;
 
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using FluentAssertions;
 using Moq;
 using Wordle;

@@ -14,16 +14,31 @@ public sealed class DynamicFeedbackProvider(string Solution) : IFeedbackProvider
             );
         }
 
+        var sieve = Solution.GroupBy(c => c).ToDictionary(g => g.Key, g => g.Count());
+
         var feedbackArray = new char[guess.Length];
         for (var i = 0; i < guess.Length; i++)
         {
-            if (guess[i] == Solution[i])
+            var c = guess[i];
+            if (Solution[i] == c)
             {
                 feedbackArray[i] = 'c';
+                DecrementSieve(sieve, c);
             }
-            else if (Solution.Contains(guess[i]))
+        }
+
+        for (var i = 0; i < guess.Length; i++)
+        {
+            if (feedbackArray[i] == 'c')
+            {
+                continue;
+            }
+
+            var c = guess[i];
+            if (sieve.TryGetValue(c, out var count))
             {
                 feedbackArray[i] = 'm';
+                DecrementSieve(sieve, c);
             }
             else
             {
@@ -32,5 +47,27 @@ public sealed class DynamicFeedbackProvider(string Solution) : IFeedbackProvider
         }
 
         return new string(feedbackArray);
+    }
+
+    private static void DecrementSieve(Dictionary<char, int> sieve, char c)
+    {
+        if (!sieve.TryGetValue(c, out var count))
+        {
+            throw new KeyNotFoundException($"Missing character '{c}' in sieve.");
+        }
+
+        switch (count)
+        {
+            case 0:
+                throw new InvalidOperationException(
+                    $"Did not expect to find keys with zero value in sieve."
+                );
+            case 1:
+                sieve.Remove(c);
+                break;
+            default:
+                sieve[c]--;
+                break;
+        }
     }
 }
