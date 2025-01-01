@@ -77,9 +77,10 @@ public sealed class SolverTests
     }
 
     [Theory]
-    [InlineData(20241260, "mambo")]
+    [InlineData(20241260, "mambo")] // fixed in commit 386c6c442ba2f515b08c769c53d6c253ba1c0b37
+    [InlineData(20241295, "mambo")] // fixed in commit 2134bc918dab9cc7c39e1bf81fe0c59bfe605d24
     [InlineData(20241269, "stare")]
-    [InlineData(20250237, "nerve")]
+    [InlineData(20250237, "nerve")] // fixed in commit 386c6c442ba2f515b08c769c53d6c253ba1c0b37
     [InlineData(20241916, "lemur")]
     [InlineData(20241413, "grain")]
     public void Solve_DynamicFeedback_ProblematicSeeds_ShouldFindSolutionWithinSixAttempts(
@@ -105,7 +106,8 @@ public sealed class SolverTests
             .BeLessOrEqualTo(6, $"guesses were {string.Join($" {Unicode.RightArrow} ", guesses)}");
     }
 
-    [Theory(Skip = "Special test case used to find problematic seeds")]
+    [Theory]
+    //[Theory(Skip = "Special test case used to find problematic seeds")]
     [InlineData("2024-12-27", "grain")]
     [InlineData("2024-12-28", "decry")]
     [InlineData("2024-12-29", "mambo")]
