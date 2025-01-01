@@ -32,6 +32,12 @@ public class SolverTests
         3,
         new[] { "dealt|2315|ncnmn", "helix|25|ncmnn", "lemur|13|ccccc" }
     )]
+    [InlineData(
+        "2025-01-01",
+        "nerve",
+        3,
+        new[] { "saner|2315|nnmmm", "borne|15|nncmc", "nerve|1|ccccc" }
+    )]
     public void Solve_ReturnsCorrectSolutionAndGuesses(
         string publicationDateString,
         string expectedSolution,
