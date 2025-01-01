@@ -1,7 +1,13 @@
 namespace Wordle
 {
+    /// <summary>
+    /// Provides feedback on guesses.
+    /// </summary>
     public interface IFeedbackProvider
     {
-        string? GetFeedback(int remainingWordCount);
+        /// <summary>
+        /// Provides feedback on a guess.
+        /// </summary>
+        string? GetFeedback(string guess, int remainingWordCount);
     }
 }

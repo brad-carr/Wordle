@@ -5,47 +5,54 @@ namespace Wordle;
 public sealed class Solver(IConsole console, IFeedbackProvider feedbackProvider)
 {
     public const int WordLength = 5;
-    private IConsole _console = console;
+    private readonly IConsole _console = console;
     internal static readonly string SolvedFeedback = new('c', WordLength);
 
-    public (string? solution, int numGuesses) Solve(DateOnly publicationDate)
+    public (string? solution, IReadOnlyCollection<string> guesses) Solve(DateOnly publicationDate)
+    {
+        var seed = GetSeed(publicationDate);
+        var random = new Random(seed);
+        return Solve(random);
+    }
+
+    public (string? solution, IReadOnlyCollection<string> guesses) Solve(Random random)
     {
         var remainingWords = WordListReader.EnumerateLines().ToArray();
         var solution = Enumerable.Repeat(' ', WordLength).ToArray();
+        var guesses = new List<string>(10);
         var numAttempts = 0;
-        var rand = new Random(
-            publicationDate.Year * 10000 + publicationDate.Month * 100 + publicationDate.Day
-        );
 
         while (true)
         {
             numAttempts++;
 
-            var suggestion =
+            var guess =
                 remainingWords.Length == 1
                     ? remainingWords[0]
                     : remainingWords
                         .GroupBy(word => word.Distinct().Count())
                         .OrderByDescending(g => g.Key)
                         .First()
-                        .RandomElement(rand)!;
+                        .RandomElement(random)!;
+
+            guesses.Add(guess);
 
             _console.WriteLine(
-                $"Suggestion $magenta({numAttempts}): $green({suggestion.ToUpper()}) - out of $magenta({"possibility".ToQuantity(remainingWords.Length)})"
+                $"Suggestion $magenta({numAttempts}): $green({guess.ToUpper()}) - out of $magenta({"possibility".ToQuantity(remainingWords.Length)})"
             );
 
-            var feedback = feedbackProvider.GetFeedback(remainingWords.Length);
+            var feedback = feedbackProvider.GetFeedback(guess, remainingWords.Length);
             if (feedback == null)
             {
-                return (null, numAttempts);
+                return (null, guesses);
             }
             if (feedback == SolvedFeedback)
             {
-                return (suggestion, numAttempts);
+                return (guess, guesses);
             }
 
             var operations = feedback
-                .Zip(suggestion)
+                .Zip(guess)
                 .Select((x, i) => (f: x.First, c: x.Second, i))
                 .Where(x => solution[x.i] != x.c) // skip already solved positional indexes
                 .OrderBy(x => x.f); // ensures processing order 'c' -> 'm' -> 'n'
@@ -81,8 +88,11 @@ public sealed class Solver(IConsole console, IFeedbackProvider feedbackProvider)
             if (remainingWords.Length == 0)
             {
                 _console.WriteLine("$red(No remaining words, check input)");
-                return (null, numAttempts);
+                return (null, guesses);
             }
         }
     }
+
+    internal static int GetSeed(DateOnly publicationDate) =>
+        publicationDate.Year * 10000 + publicationDate.Month * 100 + publicationDate.Day;
 }

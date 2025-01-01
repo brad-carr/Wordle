@@ -2,5 +2,6 @@ namespace Wordle;
 
 internal static class Unicode
 {
-    public const string UpArrow = "↑";
+    public const char UpArrow = '↑';
+    public const char RightArrow = '→';
 }

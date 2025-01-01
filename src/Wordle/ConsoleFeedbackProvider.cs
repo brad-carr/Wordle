@@ -4,7 +4,7 @@ namespace Wordle;
 
 internal sealed class ConsoleFeedbackProvider(IConsole console) : IFeedbackProvider
 {
-    public string? GetFeedback(int remainingWordCount)
+    public string? GetFeedback(string _guess, int remainingWordCount)
     {
         if (remainingWordCount == 1)
         {
