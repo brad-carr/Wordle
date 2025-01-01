@@ -1,6 +1,6 @@
 namespace Wordle;
 
-public static class Linq
+internal static class Linq
 {
     /// <summary>Chooses a random element from a sequence, using only a single pass of the sequence.</summary>
     /// <remarks>Uses the Fisher-Yates reservoir sampling algorithm.</remarks>

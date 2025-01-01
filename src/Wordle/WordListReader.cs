@@ -1,6 +1,6 @@
 namespace Wordle;
 
-public static class WordListReader
+internal static class WordListReader
 {
     public static IEnumerable<string> EnumerateLines()
     {

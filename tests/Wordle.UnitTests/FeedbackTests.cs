@@ -3,7 +3,7 @@
 using FluentAssertions;
 using Wordle;
 
-public class FeedbackTests
+public sealed class FeedbackTests
 {
     [Theory]
     [InlineData('a', false)]

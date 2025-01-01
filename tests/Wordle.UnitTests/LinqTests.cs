@@ -3,7 +3,7 @@
 using FluentAssertions;
 using Wordle;
 
-public class LinqTests
+public sealed class LinqTests
 {
     [Theory]
     [InlineData("a")]

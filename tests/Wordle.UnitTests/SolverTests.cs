@@ -4,7 +4,7 @@ using FluentAssertions;
 using Moq;
 using Wordle;
 
-public class SolverTests
+public sealed class SolverTests
 {
     [Theory]
     [InlineData(

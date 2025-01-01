@@ -3,7 +3,7 @@ using System.Text;
 namespace Wordle;
 
 /// <summary>Wraps an existing console and adds support for colored text and rainbow text.</summary>
-public class RicherConsole : IConsole
+internal sealed class RicherConsole : IConsole
 {
     private static readonly Dictionary<string, ConsoleColor> ColorMap =
         Enum.GetNames<ConsoleColor>()

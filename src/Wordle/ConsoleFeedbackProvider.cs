@@ -2,7 +2,7 @@ using Humanizer;
 
 namespace Wordle;
 
-public class ConsoleFeedbackProvider(IConsole console) : IFeedbackProvider
+internal sealed class ConsoleFeedbackProvider(IConsole console) : IFeedbackProvider
 {
     public string? GetFeedback(int remainingWordCount)
     {

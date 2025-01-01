@@ -2,7 +2,7 @@ using Humanizer;
 
 namespace Wordle;
 
-public class Solver(IConsole console, IFeedbackProvider feedbackProvider)
+public sealed class Solver(IConsole console, IFeedbackProvider feedbackProvider)
 {
     public const int WordLength = 5;
     private IConsole _console = console;

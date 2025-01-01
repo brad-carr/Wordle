@@ -4,7 +4,7 @@ using Moq;
 
 namespace Wordle.UnitTests
 {
-    public class RicherConsoleTests
+    public sealed class RicherConsoleTests
     {
         private const ConsoleColor DefaultBackgroundColor = ConsoleColor.Black;
         private const ConsoleColor DefaultForegroundColor = ConsoleColor.Gray;

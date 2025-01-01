@@ -4,7 +4,7 @@ using FluentAssertions;
 using Moq;
 using Wordle;
 
-public class ConsoleFeedbackProviderTests
+public sealed class ConsoleFeedbackProviderTests
 {
     [Fact]
     public void GetFeedback_SkipsConsoleInteractionsWhenOnlyOneOption()

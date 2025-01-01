@@ -1,10 +1,9 @@
-﻿using System.Drawing;
-using FluentAssertions;
+﻿using FluentAssertions;
 
 namespace Wordle.UnitTests;
 
 [Collection(nameof(ConsoleTestCollection))]
-public class ConsoleWrapperTests
+public sealed class ConsoleWrapperTests
 {
     [Fact]
     public void GetColorProperties_ShouldNotBeNegative()
@@ -206,4 +205,4 @@ public class ConsoleWrapperTests
 }
 
 [CollectionDefinition(nameof(ConsoleTestCollection), DisableParallelization = true)]
-public class ConsoleTestCollection { }
+public sealed class ConsoleTestCollection { }
