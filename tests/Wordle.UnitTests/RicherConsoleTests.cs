@@ -282,16 +282,6 @@ namespace Wordle.UnitTests
 
             var sut = new RicherConsole(inner.Object);
 
-            inner.VerifyGet(
-                mock => mock.ForegroundColor,
-                Times.Once(),
-                "should capture the initial foreground color on initialization"
-            );
-            inner.VerifyGet(
-                mock => mock.BackgroundColor,
-                Times.Once(),
-                "should capture the initial background color on initialization"
-            );
             inner.Verify(
                 mock => mock.Clear(),
                 Times.Once(),

@@ -11,8 +11,6 @@ public class RicherConsole : IConsole
             .ToDictionary(z => z.First.ToLower(), z => z.Second, StringComparer.OrdinalIgnoreCase);
 
     private IConsole _inner;
-    private ConsoleColor _initialForegroundColor;
-    private ConsoleColor _initialBackgroundColor;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="RicherConsole"/> class.
@@ -22,8 +20,6 @@ public class RicherConsole : IConsole
     {
         _inner = inner;
         Clear();
-        _initialForegroundColor = ForegroundColor;
-        _initialBackgroundColor = BackgroundColor;
     }
 
     /// <summary>
