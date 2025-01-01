@@ -1,0 +1,13 @@
+{
+	"version": "2.0.0",
+    "tasks": [
+		{
+			"label": "build-release",
+			"type": "dotnet",
+			"task": "build ${workspaceFolder}/src/Wordle/Wordle.csproj --configuration Release",
+			"file": "e:/Brad/dev/git/Wordle/src/Wordle/Wordle.csproj",
+			"group": "build",
+			"problemMatcher": [],
+		}
+	]
+}
