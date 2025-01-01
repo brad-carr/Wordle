@@ -19,7 +19,11 @@ public class ConsoleWrapper : IConsole
     public ConsoleColor ForegroundColor
     {
         get => Console.ForegroundColor;
-        set => Console.ForegroundColor = value;
+        set
+        {
+            Console.ForegroundColor = value;
+            Console.WriteLine($"ForegroundColor set to {value}");
+        }
     }
 
     public string? ReadLine() => Console.ReadLine();
