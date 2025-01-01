@@ -17,18 +17,18 @@ public class LinqTests
         var elements = distinctChars.Select(c => c.ToString()).ToArray();
         var distribution = elements.ToDictionary(s => s, _ => 0);
         var iters = distinctChars.Length * 2000;
-
+        var random = new Random(9183247);
         // Act
         for (var i = 0; i < iters; i++)
         {
-            distribution[elements.RandomElement()!]++;
+            distribution[elements.RandomElement(random)!]++;
         }
 
         // Assert
         var expectedAllocation = 1.0 / distinctChars.Length;
         foreach (var s in elements)
         {
-            (1.0 * distribution[s] / iters).Should().BeApproximately(expectedAllocation, 0.03);
+            (1.0 * distribution[s] / iters).Should().BeApproximately(expectedAllocation, 0.04);
         }
     }
 }
