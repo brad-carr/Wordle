@@ -1,5 +1,7 @@
 ﻿namespace Wordle.UnitTests;
 
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using FluentAssertions;
 using Moq;
 using Wordle;
@@ -79,6 +81,9 @@ public sealed class SolverTests
     [Theory]
     [InlineData(20241260, "mambo")]
     [InlineData(20241269, "stare")]
+    [InlineData(20250237, "nerve")]
+    [InlineData(20241916, "lemur")]
+    [InlineData(20241413, "grain")]
     public void Solve_DynamicFeedback_ProblematicSeeds_ShouldFindSolutionWithinSixAttempts(
         int problematicSeed,
         string solution
@@ -102,7 +107,7 @@ public sealed class SolverTests
             .BeLessOrEqualTo(6, $"guesses were {string.Join($" {Unicode.RightArrow} ", guesses)}");
     }
 
-    [Theory]
+    [Theory(Skip = "Special test case used to find problematic seeds")]
     [InlineData("2024-12-27", "grain")]
     [InlineData("2024-12-28", "decry")]
     [InlineData("2024-12-29", "mambo")]
@@ -115,7 +120,7 @@ public sealed class SolverTests
     )
     {
         // Arrange
-        const int NumConsecutiveSeedsToTest = 50;
+        const int NumConsecutiveSeedsToTest = 5000;
         var publicationDate = DateOnly.Parse(publicationDateLiteral);
         var console = Mock.Of<IConsole>();
         var feedbackProvider = new DynamicFeedbackProvider(solution);

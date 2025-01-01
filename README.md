@@ -57,6 +57,8 @@ This solver uses only the list of valid solutions, excluding the larger set of v
 
 A major weakness of this solver is that it makes correctly placed letters sticky, leading to inefficiencies when multiple options exist. For instance, starting with WATCH and confirming the last four letters leaves B, C, L, M, and P as possible first letters, risking exhaustion of all five remaining guesses. To ensure a solution in exactly two more attempts, we could guess CLIMB, then use elimination — falling back to P if needed — to identify the correct letter before submitting the final answer. I plan to incorporate this technique at a later date once I spot a scenario where the algorithm fails in 6 guesses.
 
+Problematic seeds can be established by running test `Solve_DynamicFeedback_ProblematicSeeds_ShouldFindSolutionWithinSixAttempts`. Once found the solution and problematic seed can be added to test `Solve_DynamicFeedback_ProblematicSeeds_ShouldFindSolutionWithinSixAttempts` for further debugging / investigation / algorithm optimisation.
+
 ## Credits
 
 File [wordlist.txt](https://github.com/brad-carr/WordleSolver/blob/master/src/Wordle/wordlist.txt) was cloned from [wordlist.txt](https://gist.github.com/cfreshman/a03ef2cba789d8cf00c08f767e0fad7b); thanks to [Cyrus Freshman](https://gist.github.com/cfreshman) for this.
