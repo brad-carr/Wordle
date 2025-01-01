@@ -58,9 +58,9 @@ public class SolverTests
         var console = Mock.Of<IConsole>();
         var feedbackProviderMock = new Mock<IFeedbackProvider>(MockBehavior.Strict);
 
-        foreach (var (word, remaining, feedback) in feedbackData)
+        foreach (var (_, remaining, feedback) in feedbackData)
         {
-            feedbackProviderMock.Setup(mock => mock.GetFeedback(word, remaining)).Returns(feedback);
+            feedbackProviderMock.Setup(mock => mock.GetFeedback(remaining)).Returns(feedback);
         }
 
         var solver = new Solver(console, feedbackProviderMock.Object);
@@ -82,9 +82,7 @@ public class SolverTests
 
         var console = Mock.Of<IConsole>();
         var feedbackProviderMock = new Mock<IFeedbackProvider>(MockBehavior.Strict);
-        feedbackProviderMock
-            .Setup(mock => mock.GetFeedback(It.IsAny<string>(), It.IsAny<int>()))
-            .Returns("nnnnn");
+        feedbackProviderMock.Setup(mock => mock.GetFeedback(It.IsAny<int>())).Returns("nnnnn");
 
         var solver = new Solver(console, feedbackProviderMock.Object);
 
@@ -106,7 +104,7 @@ public class SolverTests
         var console = Mock.Of<IConsole>();
         var feedbackProviderMock = new Mock<IFeedbackProvider>(MockBehavior.Strict);
         feedbackProviderMock
-            .Setup(mock => mock.GetFeedback(It.IsAny<string>(), It.IsAny<int>()))
+            .Setup(mock => mock.GetFeedback(It.IsAny<int>()))
             .Returns((string)null!);
 
         var solver = new Solver(console, feedbackProviderMock.Object);

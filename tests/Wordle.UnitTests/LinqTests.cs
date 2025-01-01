@@ -18,6 +18,7 @@ public class LinqTests
         var distribution = elements.ToDictionary(s => s, _ => 0);
         var iters = distinctChars.Length * 2000;
         var random = new Random(9183247);
+
         // Act
         for (var i = 0; i < iters; i++)
         {
