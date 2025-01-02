@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using FluentAssertions;
 using Moq;
+using Wordle.Interaction;
 
 namespace Wordle.UnitTests
 {

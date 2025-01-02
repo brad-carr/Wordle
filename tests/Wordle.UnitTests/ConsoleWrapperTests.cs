@@ -2,6 +2,8 @@
 
 namespace Wordle.UnitTests;
 
+using Wordle.Interaction;
+
 [Collection(nameof(ConsoleTestCollection))]
 public sealed class ConsoleWrapperTests
 {

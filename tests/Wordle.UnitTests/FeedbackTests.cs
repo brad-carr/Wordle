@@ -1,14 +1,14 @@
 ﻿namespace Wordle.UnitTests;
 
 using FluentAssertions;
-using Wordle;
+using Wordle.Feedback;
 
 public sealed class FeedbackTests
 {
     [Theory]
     [InlineData('a', false)]
     [InlineData('b', false)]
-    [InlineData(Feedback.Correct, true)]
+    [InlineData(FeedbackOption.Correct, true)]
     [InlineData('d', false)]
     [InlineData('e', false)]
     [InlineData('f', false)]
@@ -18,8 +18,8 @@ public sealed class FeedbackTests
     [InlineData('j', false)]
     [InlineData('k', false)]
     [InlineData('l', false)]
-    [InlineData(Feedback.Misplaced, true)]
-    [InlineData(Feedback.NoMoreOccurrences, true)]
+    [InlineData(FeedbackOption.Misplaced, true)]
+    [InlineData(FeedbackOption.NoMoreOccurrences, true)]
     [InlineData('o', false)]
     [InlineData('p', false)]
     [InlineData('q', false)]
@@ -35,7 +35,7 @@ public sealed class FeedbackTests
     public void IsValid_ReturnsTrueForRecognisedCharacters(char test, bool isValid)
     {
         // Act
-        var actual = Feedback.IsValid(test);
+        var actual = FeedbackOption.IsValid(test);
 
         // Assert
         actual.Should().Be(isValid);

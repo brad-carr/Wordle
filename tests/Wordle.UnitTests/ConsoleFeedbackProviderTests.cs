@@ -3,6 +3,8 @@
 using FluentAssertions;
 using Moq;
 using Wordle;
+using Wordle.Feedback;
+using Wordle.Interaction;
 
 public sealed class ConsoleFeedbackProviderTests
 {

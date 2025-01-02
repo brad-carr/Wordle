@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace Wordle;
+namespace Wordle.Interaction;
 
 /// <summary>Wraps an existing console and adds support for colored text and rainbow text.</summary>
 internal sealed class RicherConsole : IConsole

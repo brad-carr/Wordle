@@ -1,4 +1,4 @@
-namespace Wordle;
+namespace Wordle.Interaction;
 
 internal sealed class ConsoleWrapper : IConsole
 {

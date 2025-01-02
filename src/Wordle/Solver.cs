@@ -1,30 +1,47 @@
 using Humanizer;
+using Wordle.Interaction;
+using Wordle.Feedback;
 
 namespace Wordle;
 
 public sealed class Solver(IConsole console, IFeedbackProvider feedbackProvider)
 {
     public const int WordLength = 5;
+    public const int MaxAttempts = 6;
+
     private readonly IConsole _console = console;
     internal static readonly string SolvedFeedback = new('c', WordLength);
 
-    public (string? solution, IReadOnlyCollection<string> guesses) Solve(DateOnly publicationDate)
+    public (string? solution, IReadOnlyCollection<string> guesses, string? reason) Solve(
+        DateOnly publicationDate
+    )
     {
         var seed = GetSeed(publicationDate);
         var random = new Random(seed);
         return Solve(random);
     }
 
-    public (string? solution, IReadOnlyCollection<string> guesses) Solve(Random random)
+    public (string? solution, IReadOnlyCollection<string> guesses, string? failureReason) Solve(
+        Random random
+    )
     {
         var remainingWords = WordListReader.EnumerateLines().ToArray();
         var solution = Enumerable.Repeat(' ', WordLength).ToArray();
         var guesses = new List<string>(10);
         var numAttempts = 0;
 
-        while (true)
+        while (numAttempts++ < MaxAttempts)
         {
-            numAttempts++;
+            if (
+                WordLength - solution.Count(c => c == ' ') == 1 // only one character left to solve
+                && remainingWords.Length > MaxAttempts
+                && feedbackProvider is DynamicFeedbackProvider
+            )
+            {
+                throw new InvalidOperationException(
+                    "Too many remaining words for final guess, leaving to chance; algorithm needs improvement."
+                );
+            }
 
             var guess =
                 remainingWords.Length == 1
@@ -44,11 +61,11 @@ public sealed class Solver(IConsole console, IFeedbackProvider feedbackProvider)
             var feedback = feedbackProvider.GetFeedback(guess, remainingWords.Length);
             if (feedback == null)
             {
-                return (null, guesses);
+                return (null, guesses, "failed to acquire feedback for guess");
             }
             if (feedback == SolvedFeedback)
             {
-                return (guess, guesses);
+                return (guess, guesses, null);
             }
 
             var operations = feedback
@@ -57,18 +74,18 @@ public sealed class Solver(IConsole console, IFeedbackProvider feedbackProvider)
                 .Where(x => solution[x.i] != x.c) // skip already solved positional indexes
                 .OrderBy(x => x.f); // ensures processing order 'c' -> 'm' -> 'n'
 
-            var misplacedLetters = new HashSet<char>();
+            var misplacedChars = new HashSet<char>();
 
             foreach (var (f, c, i) in operations)
             {
                 switch (f)
                 {
-                    case Feedback.Correct:
+                    case FeedbackOption.Correct:
                         solution[i] = c;
                         remainingWords = remainingWords.Where(w => w[i] == c).ToArray();
                         break;
-                    case Feedback.Misplaced:
-                        misplacedLetters.Add(c);
+                    case FeedbackOption.Misplaced:
+                        misplacedChars.Add(c);
                         var unsolvedIndexes = Enumerable
                             .Range(0, WordLength)
                             .Where(j => j != i && solution[j] == ' ');
@@ -76,8 +93,8 @@ public sealed class Solver(IConsole console, IFeedbackProvider feedbackProvider)
                             .Where(w => w[i] != c && unsolvedIndexes.Any(u => w[u] == c))
                             .ToArray();
                         break;
-                    case Feedback.NoMoreOccurrences:
-                        if (misplacedLetters.Contains(c))
+                    case FeedbackOption.NoMoreOccurrences:
+                        if (misplacedChars.Contains(c))
                         {
                             // skip if same character misplaced elsewhere
                             // required for seed test to pass: [InlineData(20241295, "mambo")]
@@ -98,9 +115,11 @@ public sealed class Solver(IConsole console, IFeedbackProvider feedbackProvider)
             if (remainingWords.Length == 0)
             {
                 _console.WriteLine("$red(No remaining words, check input)");
-                return (null, guesses);
+                return (null, guesses, "algorithm failure, no remaining words available");
             }
         }
+
+        return (null, guesses, "maximum attempts reached without solution");
     }
 
     internal static int GetSeed(DateOnly publicationDate) =>

@@ -1,4 +1,4 @@
-namespace Wordle.UnitTests;
+namespace Wordle.Feedback;
 
 public sealed class DynamicFeedbackProvider(string Solution) : IFeedbackProvider
 {

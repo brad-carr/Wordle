@@ -3,6 +3,8 @@
 using FluentAssertions;
 using Moq;
 using Wordle;
+using Wordle.Feedback;
+using Wordle.Interaction;
 
 public sealed class SolverTests
 {
@@ -68,11 +70,12 @@ public sealed class SolverTests
         var solver = new Solver(console, feedbackProviderMock.Object);
 
         // Act
-        var (solution, guesses) = solver.Solve(publicationDate);
+        var (solution, guesses, failureReason) = solver.Solve(publicationDate);
 
         // Assert
         solution.Should().Be(expectedSolution);
         guesses.Count.Should().Be(expectedGuesses);
+        failureReason.Should().BeNull();
         feedbackProviderMock.VerifyAll();
     }
 
@@ -95,7 +98,7 @@ public sealed class SolverTests
         var random = new Random(problematicSeed);
 
         // Act
-        var (solverSolution, guesses) = solver.Solve(random);
+        var (solverSolution, guesses, failureReason) = solver.Solve(random);
 
         // Assert
         solverSolution
@@ -104,15 +107,17 @@ public sealed class SolverTests
         guesses
             .Count.Should()
             .BeLessOrEqualTo(6, $"guesses were {string.Join($" {Unicode.RightArrow} ", guesses)}");
+        failureReason.Should().BeNull();
     }
 
-    [Theory(Skip = "Special test case used to find problematic seeds")]
+    [Theory] //(Skip = "Special test case used to find problematic seeds")]
     [InlineData("2024-12-27", "grain")]
     [InlineData("2024-12-28", "decry")]
     [InlineData("2024-12-29", "mambo")]
     [InlineData("2024-12-30", "stare")]
     [InlineData("2024-12-31", "lemur")]
     [InlineData("2025-01-01", "nerve")]
+    [InlineData("2025-01-02", "chose")]
     public void Solve_DynamicFeedback_MultipleSeeds_ShouldFindSolutionWithinSixAttempts(
         string publicationDateLiteral,
         string solution
@@ -136,7 +141,7 @@ public sealed class SolverTests
                 var random = new Random(currentSeed);
 
                 // Act
-                var (solverSolution, guesses) = solver.Solve(random);
+                var (solverSolution, guesses, failureReason) = solver.Solve(random);
 
                 // Assert
                 solverSolution
@@ -151,7 +156,7 @@ public sealed class SolverTests
                         6,
                         $"seed was {currentSeed}, guesses were {string.Join($" {Unicode.RightArrow} ", guesses)}"
                     );
-
+                failureReason.Should().BeNull();
                 currentSeed = currentSeed == int.MaxValue ? 0 : currentSeed + 1;
             });
     }
@@ -171,12 +176,13 @@ public sealed class SolverTests
         var solver = new Solver(console, feedbackProviderMock.Object);
 
         // Act
-        var (solution, guesses) = solver.Solve(publicationDate);
+        var (solution, guesses, failureReason) = solver.Solve(publicationDate);
 
         // Assert
         solution.Should().BeNull();
         guesses.Count.Should().Be(3);
         feedbackProviderMock.VerifyAll();
+        failureReason.Should().Be("no solution found");
     }
 
     [Fact]
@@ -194,11 +200,12 @@ public sealed class SolverTests
         var solver = new Solver(console, feedbackProviderMock.Object);
 
         // Act
-        var (solution, guesses) = solver.Solve(publicationDate);
+        var (solution, guesses, failureReason) = solver.Solve(publicationDate);
 
         // Assert
         solution.Should().BeNull();
         guesses.Count.Should().Be(1);
         feedbackProviderMock.VerifyAll();
+        failureReason.Should().Be("failed to acquire feedback for guess");
     }
 }

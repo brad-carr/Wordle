@@ -1,6 +1,6 @@
-using Humanizer;
+using Wordle.Interaction;
 
-namespace Wordle;
+namespace Wordle.Feedback;
 
 internal sealed class ConsoleFeedbackProvider(IConsole console) : IFeedbackProvider
 {
@@ -33,7 +33,7 @@ internal sealed class ConsoleFeedbackProvider(IConsole console) : IFeedbackProvi
 
             var invalidCharInfo = feedback
                 .Select(PositionalChar.Create)
-                .FirstOrDefault(x => !Feedback.IsValid(x.Char));
+                .FirstOrDefault(x => FeedbackOption.IsInvalid(x.Char));
 
             if (invalidCharInfo != null)
             {

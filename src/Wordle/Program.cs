@@ -1,16 +1,15 @@
 ﻿using Humanizer;
 using Wordle;
+using Wordle.Feedback;
+using Wordle.Interaction;
 
 var console = new RicherConsole(new ConsoleWrapper());
 var feedbackProvider = new ConsoleFeedbackProvider(console);
 var solver = new Solver(console, feedbackProvider);
-var (solution, guesses) = solver.Solve(DateOnly.FromDateTime(DateTime.Today));
+var (solution, guesses, failureReason) = solver.Solve(DateOnly.FromDateTime(DateTime.Today));
 
-if (solution != null)
-{
-    console.WriteLine($"$rainbow(Solved after {"guess".ToQuantity(guesses.Count)})");
-}
-else
-{
-    console.WriteLine("No solution found");
-}
+console.WriteLine(
+    solution == null
+        ? $"No solution found because: $red({failureReason})"
+        : $"$rainbow(Solved after {"guess".ToQuantity(guesses.Count)})"
+);

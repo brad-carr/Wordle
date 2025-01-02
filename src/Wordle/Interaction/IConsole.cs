@@ -1,4 +1,4 @@
-namespace Wordle;
+namespace Wordle.Interaction;
 
 public interface IConsole
 {

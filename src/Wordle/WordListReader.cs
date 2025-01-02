@@ -7,7 +7,7 @@ internal static class WordListReader
         var assembly =
             System.Reflection.Assembly.GetExecutingAssembly()
             ?? throw new Exception("assembly is null");
-        var resourceName = "Wordle.wordlist.txt";
+        var resourceName = "Wordle.Resources.wordlist.txt";
 
         using var stream =
             assembly.GetManifestResourceStream(resourceName)
