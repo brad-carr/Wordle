@@ -1,6 +1,6 @@
 using Humanizer;
-using Wordle.Interaction;
 using Wordle.Feedback;
+using Wordle.Interaction;
 
 namespace Wordle;
 
@@ -30,12 +30,14 @@ public sealed class Solver(IConsole console, IFeedbackProvider feedbackProvider)
         var guesses = new List<string>(10);
         var numAttempts = 0;
 
-        while (numAttempts++ < MaxAttempts)
+        while (numAttempts < MaxAttempts)
         {
+            var remainingAttempts = MaxAttempts - numAttempts++;
+
             if (
-                WordLength - solution.Count(c => c == ' ') == 1 // only one character left to solve
-                && remainingWords.Length > MaxAttempts
-                && feedbackProvider is DynamicFeedbackProvider
+                feedbackProvider is DynamicFeedbackProvider
+                && WordLength - solution.Count(c => c != ' ') == 1 // only one character left to solve
+                && remainingWords.Length > remainingAttempts // exhaustion of attempts possible
             )
             {
                 throw new InvalidOperationException(
