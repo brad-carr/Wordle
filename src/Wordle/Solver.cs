@@ -56,11 +56,16 @@ public sealed class Solver(IConsole console, IFeedbackProvider feedbackProvider)
                     .Distinct()
                     .ToArray();
 
-                guess = allWords //TODO: use full wordle guess list, not just the solution list
-                    .GroupBy(word => unsolvedCharCandidates.Count(u => word.Count(c => c == u) == 1))
-                    .OrderByDescending(g => g.Key)
-                    .FirstOrDefault()
-                    ?.RandomElement(random);
+                guess = allWords //TODO: use full wordle guess list here, not just the solution list
+                    .GroupBy(word =>
+                        unsolvedCharCandidates.Count(u =>
+                            !solution.Contains(u) // favour characters not yet in the solution
+                            && word.Count(c => c == u) == 1 // favour characters with unique occurrences in the word to maximize elimination scope
+                        )
+                    )
+                    .OrderByDescending(g => g.Key) // favour groups matching most criteria
+                    .First() // group matching most criteria
+                    .First(); // arbitrary choice from group; first word will suffice
                 if (guess != null)
                 {
                     feedbackIndexesToProcess = Enumerable
