@@ -182,7 +182,7 @@ public sealed class SolverTests
         solution.Should().BeNull();
         guesses.Count.Should().Be(3);
         feedbackProviderMock.VerifyAll();
-        failureReason.Should().Be("no solution found");
+        failureReason.Should().Be("algorithm failure, no remaining words available");
     }
 
     [Fact]
