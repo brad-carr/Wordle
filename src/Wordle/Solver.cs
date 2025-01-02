@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Humanizer;
 using Wordle.Feedback;
 using Wordle.Interaction;
@@ -25,34 +26,56 @@ public sealed class Solver(IConsole console, IFeedbackProvider feedbackProvider)
         Random random
     )
     {
-        var remainingWords = WordListReader.EnumerateLines().ToArray();
+        var allWords = WordListReader.EnumerateLines().ToArray();
+        var remainingWords = allWords.ToArray();
         var solution = Enumerable.Repeat(' ', WordLength).ToArray();
-        var guesses = new List<string>(10);
+        var guesses = new List<string>(MaxAttempts);
         var numAttempts = 0;
 
         while (numAttempts < MaxAttempts)
         {
             var remainingAttempts = MaxAttempts - numAttempts++;
+            int[]? feedbackIndexesToProcess = null;
 
-            if (
+            string? guess = null;
+            if (remainingWords.Length == 1)
+            {
+                guess = remainingWords.First();
+            }
+            else if ( // severe risk of exhaustion check
                 feedbackProvider is DynamicFeedbackProvider
                 && WordLength - solution.Count(c => c != ' ') == 1 // only one character left to solve
                 && remainingWords.Length > remainingAttempts // exhaustion of attempts possible
+                && remainingAttempts > 1 // this technique requires at least 2 attempts to work
             )
             {
-                throw new InvalidOperationException(
-                    "Too many remaining words for final guess, leaving to chance; algorithm needs improvement."
-                );
+                // Find a word that contains the most unsolved characters to maximize the number of words eliminated
+                var unsolvedCharPosition = Array.IndexOf(solution, ' ');
+                var unsolvedCharCandidates = remainingWords
+                    .Select(w => w[unsolvedCharPosition])
+                    .Distinct()
+                    .ToArray();
+
+                guess = allWords //TODO: use full wordle guess list, not just the solution list
+                    .GroupBy(word => unsolvedCharCandidates.Count(u => word.Count(c => c == u) == 1))
+                    .OrderByDescending(g => g.Key)
+                    .FirstOrDefault()
+                    ?.RandomElement(random);
+                if (guess != null)
+                {
+                    feedbackIndexesToProcess = Enumerable
+                        .Range(0, guess.Length)
+                        .Where(i => unsolvedCharCandidates.Contains(guess[i]))
+                        .ToArray();
+                }
             }
 
-            var guess =
-                remainingWords.Length == 1
-                    ? remainingWords[0]
-                    : remainingWords
-                        .GroupBy(word => word.Distinct().Count())
-                        .OrderByDescending(g => g.Key)
-                        .First()
-                        .RandomElement(random)!;
+            // Fallback to the original approach: guess the word with the most unique characters
+            guess ??= remainingWords
+                .GroupBy(word => word.Distinct().Count())
+                .OrderByDescending(g => g.Key)
+                .First()
+                .RandomElement(random)!;
 
             guesses.Add(guess);
 
@@ -73,7 +96,11 @@ public sealed class Solver(IConsole console, IFeedbackProvider feedbackProvider)
             var operations = feedback
                 .Zip(guess)
                 .Select((x, i) => (f: x.First, c: x.Second, i))
-                .Where(x => solution[x.i] != x.c) // skip already solved positional indexes
+                .Where(x =>
+                    feedbackIndexesToProcess == null
+                        ? solution[x.i] != x.c // skip already solved positional indexes
+                        : feedbackIndexesToProcess.Contains(x.i) // process only specific indexes
+                )
                 .OrderBy(x => x.f); // ensures processing order 'c' -> 'm' -> 'n'
 
             var misplacedChars = new HashSet<char>();
@@ -112,6 +139,11 @@ public sealed class Solver(IConsole console, IFeedbackProvider feedbackProvider)
                         }
                         break;
                 }
+
+                if (remainingWords.Length <= 1)
+                {
+                    break; // no need to process further feedback as either solution now known or no solution exists
+                }
             }
 
             if (remainingWords.Length == 0)
@@ -119,6 +151,14 @@ public sealed class Solver(IConsole console, IFeedbackProvider feedbackProvider)
                 _console.WriteLine("$red(No remaining words, check input)");
                 return (null, guesses, "algorithm failure, no remaining words available");
             }
+
+            // Scan remaining words to see if there are any common characters at unsolved positional indexes
+            Enumerable
+                .Range(0, WordLength)
+                .Where(i => solution[i] == ' ')
+                .Where(i => remainingWords.Select(w => w[i]).Distinct().Count() == 1)
+                .ToList()
+                .ForEach(i => solution[i] = remainingWords.First()[i]); // mark common positional character as solved
         }
 
         return (null, guesses, "maximum attempts reached without solution");

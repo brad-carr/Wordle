@@ -103,7 +103,10 @@ public sealed class SolverTests
         // Assert
         solverSolution
             .Should()
-            .Be(solution, $"guesses were {string.Join($" {Unicode.RightArrow} ", guesses)}");
+            .Be(
+                solution,
+                $"guesses were {string.Join($" {Unicode.RightArrow} ", guesses)} and failure reason was {failureReason}"
+            );
         guesses
             .Count.Should()
             .BeLessOrEqualTo(6, $"guesses were {string.Join($" {Unicode.RightArrow} ", guesses)}");
@@ -148,13 +151,13 @@ public sealed class SolverTests
                     .Should()
                     .Be(
                         solution,
-                        $"seed was {currentSeed}, guesses were {string.Join($" {Unicode.RightArrow} ", guesses)}"
+                        $"seed was {currentSeed}, guesses were {string.Join($" {Unicode.RightArrow} ", guesses)}, failure reason was {failureReason}"
                     );
                 guesses
                     .Count.Should()
                     .BeLessOrEqualTo(
                         6,
-                        $"seed was {currentSeed}, guesses were {string.Join($" {Unicode.RightArrow} ", guesses)}"
+                        $"seed was {currentSeed}, guesses were {string.Join($" {Unicode.RightArrow} ", guesses)}, failure reason was {failureReason}"
                     );
                 failureReason.Should().BeNull();
                 currentSeed = currentSeed == int.MaxValue ? 0 : currentSeed + 1;
