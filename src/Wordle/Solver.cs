@@ -167,13 +167,16 @@ public sealed class Solver(IConsole console, IFeedbackProvider feedbackProvider)
     private static void AddCommonPositionalCharsToSolution(string[] remainingWords, char[] solution)
     {
         var firstRemainingWord = remainingWords[0];
-        Enumerable
+        var solvedIndexes = Enumerable
             .Range(0, WordLength)
             .Where(i =>
                 solution[i] == ' ' && remainingWords.All(w => w[i] == firstRemainingWord[i])
-            )
-            .ToList()
-            .ForEach(i => solution[i] = remainingWords.First()[i]); // mark common positional character as solved
+            );
+
+        foreach (var i in solvedIndexes)
+        {
+            solution[i] = remainingWords.First()[i];
+        }
     }
 
     private static string[] GetNextWords(
