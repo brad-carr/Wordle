@@ -1,10 +1,11 @@
+using System.Net;
 using Wordle.Interaction;
 
 namespace Wordle.Feedback;
 
 internal sealed class ConsoleFeedbackProvider(IConsole console) : IFeedbackProvider
 {
-    public string? GetFeedback(string _guess, int remainingWordCount)
+    public string? GetFeedback(string guess, int remainingWordCount)
     {
         if (remainingWordCount == 1)
         {
@@ -35,7 +36,7 @@ internal sealed class ConsoleFeedbackProvider(IConsole console) : IFeedbackProvi
                 .Select(PositionalChar.Create)
                 .FirstOrDefault(x => FeedbackOption.IsInvalid(x.Char));
 
-            if (invalidCharInfo != null)
+            if (invalidCharInfo.IsValid())
             {
                 console.WriteLine(
                     $"Invalid feedback '$red({feedback})'; contains invalid char '$red({invalidCharInfo.Char})' at position {invalidCharInfo.Position + 1}. Use only letters $yellow(C), $yellow(M) or $yellow(N)."
@@ -51,11 +52,13 @@ internal sealed class ConsoleFeedbackProvider(IConsole console) : IFeedbackProvi
         }
     }
 
-    private class PositionalChar(char c, int position)
+    private readonly struct PositionalChar(char c, int position)
     {
         public char Char { get; } = c;
         public int Position { get; } = position;
 
         public static PositionalChar Create(char c, int i) => new(c, i);
+
+        public bool IsValid() => char.IsLetter(Char);
     }
 }
