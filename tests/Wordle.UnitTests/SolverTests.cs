@@ -44,7 +44,7 @@ public sealed class SolverTests
         failureReason.Should().BeNull();
     }
 
-    [Theory(Skip = "Use this test to find problematic seeds for which the solver fails")]
+    [Theory]//(Skip = "Use this test to find problematic seeds for which the solver fails")]
     [InlineData("2024-12-27", "grain")]
     [InlineData("2024-12-28", "decry")]
     [InlineData("2024-12-29", "mambo")]
@@ -52,6 +52,7 @@ public sealed class SolverTests
     [InlineData("2024-12-31", "lemur")]
     [InlineData("2025-01-01", "nerve")]
     [InlineData("2025-01-02", "chose")]
+    [InlineData("2025-01-03", "cheap")]
     public void Solve_DynamicFeedback_MultipleSeeds_ShouldFindSolutionWithinSixAttempts(
         string publicationDateLiteral,
         string solution
@@ -68,6 +69,7 @@ public sealed class SolverTests
     [InlineData("2024-12-31", "lemur")]
     [InlineData("2025-01-01", "nerve")]
     [InlineData("2025-01-02", "chose")]
+    [InlineData("2025-01-03", "cheap")]
     public void Solve_DynamicFeedback_NaturalSeed_ShouldFindSolutionWithinSixAttempts(
         string publicationDateLiteral,
         string solution

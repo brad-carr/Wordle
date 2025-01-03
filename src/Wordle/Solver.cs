@@ -31,6 +31,7 @@ public sealed class Solver(IConsole console, IFeedbackProvider feedbackProvider)
         var solution = Enumerable.Repeat(' ', WordLength).ToArray();
         var guesses = new List<string>(MaxAttempts);
         var numAttempts = 0;
+        var isDynamicFeedbackProvider = feedbackProvider is DynamicFeedbackProvider;
 
         while (numAttempts < MaxAttempts)
         {
@@ -40,13 +41,13 @@ public sealed class Solver(IConsole console, IFeedbackProvider feedbackProvider)
             string? guess = null;
             if (remainingWords.Length == 1)
             {
-                guess = remainingWords.First();
+                guess = remainingWords[0];
             }
             else if ( // severe risk of exhaustion check
-                feedbackProvider is DynamicFeedbackProvider
-                && WordLength - solution.Count(c => c != ' ') == 1 // only one character left to solve
-                && remainingWords.Length > remainingAttempts // exhaustion of attempts possible
+                isDynamicFeedbackProvider
                 && remainingAttempts > 1 // this technique requires at least 2 attempts to work
+                && remainingWords.Length > remainingAttempts // exhaustion of attempts possible
+                && solution.ContainsOnce(' ') // only one character left to solve
             )
             {
                 // Find a word that contains the most unsolved characters to maximize the number of words eliminated
@@ -60,7 +61,7 @@ public sealed class Solver(IConsole console, IFeedbackProvider feedbackProvider)
                     .GroupBy(word =>
                         unsolvedCharCandidates.Count(u =>
                             !solution.Contains(u) // favour characters not yet in the solution
-                            && word.Count(c => c == u) == 1 // favour characters with unique occurrences in the word to maximize elimination scope
+                            && word.ContainsOnce(u) // favour characters with unique occurrences in the word to maximize elimination scope
                         )
                     )
                     .MaxBy(g => g.Key)! // group matching most criteria
@@ -118,7 +119,8 @@ public sealed class Solver(IConsole console, IFeedbackProvider feedbackProvider)
                         misplacedChars.Add(c);
                         var unsolvedIndexes = Enumerable
                             .Range(0, WordLength)
-                            .Where(j => j != i && solution[j] == ' ');
+                            .Where(j => j != i && solution[j] == ' ')
+                            .ToArray();
                         remainingWords = remainingWords
                             .Where(w => w[i] != c && unsolvedIndexes.Any(u => w[u] == c))
                             .ToArray();
@@ -147,29 +149,31 @@ public sealed class Solver(IConsole console, IFeedbackProvider feedbackProvider)
                 }
             }
 
-            if (remainingWords.Length == 0)
+            switch (remainingWords.Length)
             {
-                _console.WriteLine("$red(No remaining words, check input)");
-                return (null, guesses, "algorithm failure, no remaining words available");
+                case 0:
+                    _console.WriteLine("$red(No remaining words, check input)");
+                    return (null, guesses, "algorithm failure, no remaining words available");
+                case 1:
+                    continue;
             }
 
-            if (remainingWords.Length == 1)
-            {
-                continue;
-            }
-
-            // Scan remaining words to see if there are any common characters at unsolved positional indexes
-            var firstRemainingWord = remainingWords[0];
-            Enumerable
-                .Range(0, WordLength)
-                .Where(i =>
-                    solution[i] == ' ' && remainingWords.All(w => w[i] == firstRemainingWord[i])
-                )
-                .ToList()
-                .ForEach(i => solution[i] = remainingWords.First()[i]); // mark common positional character as solved
+            AddCommonPositionalCharsToSolution(remainingWords, solution);
         }
 
         return (null, guesses, "maximum attempts reached without solution");
+    }
+
+    private static void AddCommonPositionalCharsToSolution(string[] remainingWords, char[] solution)
+    {
+        var firstRemainingWord = remainingWords[0];
+        Enumerable
+            .Range(0, WordLength)
+            .Where(i =>
+                solution[i] == ' ' && remainingWords.All(w => w[i] == firstRemainingWord[i])
+            )
+            .ToList()
+            .ForEach(i => solution[i] = remainingWords.First()[i]); // mark common positional character as solved
     }
 
     private static string[] GetNextWords(

@@ -32,4 +32,19 @@ public sealed class LinqTests
             (1.0 * distribution[s] / iters).Should().BeApproximately(expectedAllocation, 0.04);
         }
     }
+
+    [Theory]
+    [InlineData(new[] { 1, 2, 3, 4, 5 }, 3, true)]
+    [InlineData(new[] { 1, 2, 3, 3, 5 }, 3, false)]
+    [InlineData(new[] { 1, 2, 4, 5 }, 3, false)]
+    [InlineData(new[] { 1, 1, 1 }, 1, false)]
+    [InlineData(new int[] { }, 1, false)]
+    public void ContainsOnce_ShouldReturnExpectedResult(int[] items, int value, bool expected)
+    {
+        // Act
+        var result = items.ContainsOnce(value);
+
+        // Assert
+        result.Should().Be(expected);
+    }
 }

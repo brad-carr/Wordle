@@ -19,4 +19,23 @@ internal static class Linq
         }
         return selection;
     }
+
+    /// <summary>Checks if a sequence contains a single instance of a given item.</summary>
+    public static bool ContainsOnce<T>(this IEnumerable<T> items, T comparand)
+        where T : IEquatable<T>
+    {
+        var n = 0;
+        foreach (var item in items)
+        {
+            if (item.Equals(comparand))
+            {
+                if (++n > 1)
+                {
+                    return false;
+                }
+            }
+        }
+
+        return n == 1;
+    }
 }
