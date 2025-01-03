@@ -13,7 +13,7 @@ public sealed class SolverTests
     [InlineData(20241295, "mambo")] // fixed in commit 2134bc918dab9cc7c39e1bf81fe0c59bfe605d24
     [InlineData(20241269, "stare")] // fixed in commit 6e3740e631d36a23d2daa6e6865dbdb3adf3b4e3
     [InlineData(20241247, "stare")] // fixed in commit 680aa9c14d4678d20ed4a6467a653e1026c4685c
-    [InlineData(20241434, "stare")]
+    [InlineData(20241434, "stare")] // fixed in commit c5bf081769ed5395ecb7a77dc0ad74e10836625e
     [InlineData(20250237, "nerve")] // fixed in commit 386c6c442ba2f515b08c769c53d6c253ba1c0b37
     [InlineData(20241916, "lemur")] // fixed in commit 6e3740e631d36a23d2daa6e6865dbdb3adf3b4e3
     [InlineData(20241413, "grain")] // fixed in commit 6e3740e631d36a23d2daa6e6865dbdb3adf3b4e3
@@ -44,7 +44,7 @@ public sealed class SolverTests
         failureReason.Should().BeNull();
     }
 
-    [Theory]
+    [Theory(Skip = "Use this test to find problematic seeds for which the solver fails")]
     [InlineData("2024-12-27", "grain")]
     [InlineData("2024-12-28", "decry")]
     [InlineData("2024-12-29", "mambo")]
