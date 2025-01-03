@@ -9,81 +9,11 @@ using Wordle.Interaction;
 public sealed class SolverTests
 {
     [Theory]
-    [InlineData(
-        "2024-12-27",
-        "grain",
-        3,
-        new[] { "baker|2315|nmnnm", "cramp|88|nccnn", "grain|19|ccccc" }
-    )]
-    [InlineData(
-        "2024-12-28",
-        "decry",
-        3,
-        new[] { "whine|2315|nnnnm", "cagey|306|mnnmc", "decry|3|ccccc" }
-    )]
-    [InlineData(
-        "2024-12-29",
-        "mambo",
-        4,
-        new[] { "flint|2315|nnnnn", "hover|535|nmnnn", "buxom|11|mnnmm", "mambo|1|ccccc" }
-    )]
-    [InlineData("2024-12-30", "stare", 2, new[] { "rouse|2315|mnnmc", "stare|10|ccccc" })]
-    [InlineData(
-        "2024-12-31",
-        "lemur",
-        3,
-        new[] { "dealt|2315|ncnmn", "helix|25|ncmnn", "lemur|13|ccccc" }
-    )]
-    [InlineData(
-        "2025-01-01",
-        "nerve",
-        3,
-        new[] { "saner|2315|nnmmm", "borne|15|nncmc", "nerve|1|ccccc" }
-    )]
-    public void Solve_ExplicitFeedback_ReturnsCorrectSolutionAndGuesses(
-        string publicationDateString,
-        string expectedSolution,
-        int expectedGuesses,
-        string[] feedbackDataArray
-    )
-    {
-        // Arrange
-        var publicationDate = DateOnly.Parse(publicationDateString);
-        var feedbackData = feedbackDataArray
-            .Select(entry =>
-            {
-                var parts = entry.Split('|');
-                return (word: parts[0], remaining: int.Parse(parts[1]), feedback: parts[2]);
-            })
-            .ToList();
-
-        var console = Mock.Of<IConsole>();
-        var feedbackProviderMock = new Mock<IFeedbackProvider>(MockBehavior.Strict);
-
-        foreach (var (guess, remaining, feedback) in feedbackData)
-        {
-            feedbackProviderMock
-                .Setup(mock => mock.GetFeedback(guess, remaining))
-                .Returns(feedback);
-        }
-
-        var solver = new Solver(console, feedbackProviderMock.Object);
-
-        // Act
-        var (solution, guesses, failureReason) = solver.Solve(publicationDate);
-
-        // Assert
-        solution.Should().Be(expectedSolution);
-        guesses.Count.Should().Be(expectedGuesses);
-        failureReason.Should().BeNull();
-        feedbackProviderMock.VerifyAll();
-    }
-
-    [Theory]
     [InlineData(20241260, "mambo")] // fixed in commit 386c6c442ba2f515b08c769c53d6c253ba1c0b37
     [InlineData(20241295, "mambo")] // fixed in commit 2134bc918dab9cc7c39e1bf81fe0c59bfe605d24
     [InlineData(20241269, "stare")] // fixed in commit 6e3740e631d36a23d2daa6e6865dbdb3adf3b4e3
-    [InlineData(20241247, "stare")]
+    [InlineData(20241247, "stare")] // fixed in commit 680aa9c14d4678d20ed4a6467a653e1026c4685c
+    [InlineData(20241434, "stare")]
     [InlineData(20250237, "nerve")] // fixed in commit 386c6c442ba2f515b08c769c53d6c253ba1c0b37
     [InlineData(20241916, "lemur")] // fixed in commit 6e3740e631d36a23d2daa6e6865dbdb3adf3b4e3
     [InlineData(20241413, "grain")] // fixed in commit 6e3740e631d36a23d2daa6e6865dbdb3adf3b4e3
@@ -114,7 +44,7 @@ public sealed class SolverTests
         failureReason.Should().BeNull();
     }
 
-    [Theory] //(Skip = "Special test case used to find problematic seeds")]
+    [Theory]
     [InlineData("2024-12-27", "grain")]
     [InlineData("2024-12-28", "decry")]
     [InlineData("2024-12-29", "mambo")]
@@ -127,8 +57,32 @@ public sealed class SolverTests
         string solution
     )
     {
+        RunScenario(publicationDateLiteral, solution, 5000);
+    }
+
+    [Theory]
+    [InlineData("2024-12-27", "grain")]
+    [InlineData("2024-12-28", "decry")]
+    [InlineData("2024-12-29", "mambo")]
+    [InlineData("2024-12-30", "stare")]
+    [InlineData("2024-12-31", "lemur")]
+    [InlineData("2025-01-01", "nerve")]
+    [InlineData("2025-01-02", "chose")]
+    public void Solve_DynamicFeedback_NaturalSeed_ShouldFindSolutionWithinSixAttempts(
+        string publicationDateLiteral,
+        string solution
+    )
+    {
+        RunScenario(publicationDateLiteral, solution, 1);
+    }
+
+    private static void RunScenario(
+        string publicationDateLiteral,
+        string solution,
+        int numConsecutiveSeedsToTest
+    )
+    {
         // Arrange
-        const int NumConsecutiveSeedsToTest = 5000;
         var publicationDate = DateOnly.Parse(publicationDateLiteral);
         var console = Mock.Of<IConsole>();
         var feedbackProvider = new DynamicFeedbackProvider(solution);
@@ -137,7 +91,7 @@ public sealed class SolverTests
         var currentSeed = initialSeed;
 
         Enumerable
-            .Range(0, NumConsecutiveSeedsToTest)
+            .Range(0, numConsecutiveSeedsToTest)
             .ToList()
             .ForEach(_ =>
             {
@@ -184,9 +138,9 @@ public sealed class SolverTests
 
         // Assert
         solution.Should().BeNull();
-        guesses.Count.Should().Be(3);
+        guesses.Count.Should().Be(Solver.MaxAttempts);
         feedbackProviderMock.VerifyAll();
-        failureReason.Should().Be("algorithm failure, no remaining words available");
+        failureReason.Should().Be("maximum attempts reached without solution");
     }
 
     [Fact]

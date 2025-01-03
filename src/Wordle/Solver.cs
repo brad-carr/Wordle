@@ -63,9 +63,9 @@ public sealed class Solver(IConsole console, IFeedbackProvider feedbackProvider)
                             && word.Count(c => c == u) == 1 // favour characters with unique occurrences in the word to maximize elimination scope
                         )
                     )
-                    .OrderByDescending(g => g.Key) // favour groups matching most criteria
-                    .First() // group matching most criteria
-                    .First(); // arbitrary choice from group; first word will suffice
+                    .MaxBy(g => g.Key)! // group matching most criteria
+                    .RandomElement(random);
+
                 if (guess != null)
                 {
                     feedbackIndexesToProcess = Enumerable
@@ -75,12 +75,8 @@ public sealed class Solver(IConsole console, IFeedbackProvider feedbackProvider)
                 }
             }
 
-            // Fallback to the original approach: guess the word with the most unique characters
-            guess ??= remainingWords
-                .GroupBy(word => word.Distinct().Count())
-                .OrderByDescending(g => g.Key)
-                .First()
-                .RandomElement(random)!;
+            // Fallback to the original approach: guess the word that eliminates the most possibilities
+            guess ??= GetNextWords(solution, remainingWords).RandomElement(random)!;
 
             guesses.Add(guess);
 
@@ -135,7 +131,7 @@ public sealed class Solver(IConsole console, IFeedbackProvider feedbackProvider)
                             break;
                         }
 
-                        for (var j = 0; j < WordLength; j++)
+                        for (var j = 0; j < WordLength && remainingWords.Length > 1; j++)
                         {
                             if (solution[j] == ' ')
                             {
@@ -157,16 +153,59 @@ public sealed class Solver(IConsole console, IFeedbackProvider feedbackProvider)
                 return (null, guesses, "algorithm failure, no remaining words available");
             }
 
+            if (remainingWords.Length == 1)
+            {
+                continue;
+            }
+
             // Scan remaining words to see if there are any common characters at unsolved positional indexes
+            var firstRemainingWord = remainingWords[0];
             Enumerable
                 .Range(0, WordLength)
-                .Where(i => solution[i] == ' ')
-                .Where(i => remainingWords.Select(w => w[i]).Distinct().Count() == 1)
+                .Where(i =>
+                    solution[i] == ' ' && remainingWords.All(w => w[i] == firstRemainingWord[i])
+                )
                 .ToList()
                 .ForEach(i => solution[i] = remainingWords.First()[i]); // mark common positional character as solved
         }
 
         return (null, guesses, "maximum attempts reached without solution");
+    }
+
+    private static string[] GetNextWords(
+        char[] solution,
+        IReadOnlyCollection<string> remainingWords
+    )
+    {
+        var filteredWords = remainingWords.ToArray();
+
+        var remainingIndexes = solution
+            .Select((c, i) => (c, i))
+            .Where(x => x.c == ' ')
+            .Select(x => x.i)
+            .ToHashSet();
+
+        while (remainingIndexes.Count > 0 && filteredWords.Length > 1)
+        {
+            var next = remainingIndexes
+                .Select(i => // find the most commonly occurring character in filteredWords at position i
+                    (
+                        i,
+                        x: filteredWords
+                            .GroupBy(w => w[i], (key, words) => (i, c: key, n: words.Count()))
+                            .MaxBy(x => x.n)
+                    )
+                )
+                .MaxBy(y => y.x.n) // find the most common character across all positions
+                .x;
+
+            // filter remaining words by those having the most popular character
+            filteredWords = filteredWords.Where(w => w[next.i] == next.c).ToArray();
+
+            remainingIndexes.Remove(next.i); // mark position as visited and repeat
+        }
+
+        return filteredWords;
     }
 
     internal static int GetSeed(DateOnly publicationDate) =>
