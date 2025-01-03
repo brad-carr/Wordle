@@ -8,11 +8,31 @@ This C# program implements a basic algorithm for solving Wordle puzzles issued d
 
 The program starts by taking a copy of the dictionary of possible words located in the file [wordlist.txt](https://github.com/brad-carr/WordleSolver/blob/master/wordlist.txt), which becomes the initial list of remaining words.
 
-In each iteration, the program partitions the remaining words by the number of distinct characters and chooses one at random from the partition with the highest cardinality. This is done to maximize the number of words that can be eliminated from the remaining word list for the next iteration.
+In each iteration, the program chooses one of two strategies to determine the next guess word as follows:
 
-The program outputs this suggested word and asks the user to provide feedback for each of the positional letters. This feedback is then used to reduce the remaining word list in preparation for the next iteration.
+### Main Strategy
 
-The program stops when either the remaining word list reduces to a single element or it correctly selects the solution at random from the list of remaining words.
+- finds the most commonly occuring char in each of the unsolved positions and filters word to those that contain the most commonly occuring positional char
+- repeat for the remaining unsolved positions until a word is found
+
+### Alternative Strategy
+
+Chosen when all-but-one positional index has already been solved and the number of remaining words exceeds the number of remaining attempts. In this scenario the risk of exhausting all remaining letters via the brute force method of trying each remaining letter one-by-one is possible.
+
+To mitigate this we find a 5-letter word that contains the most of those possible characters and submit that as our next guess, to maximise the number of remaining words that can be elimiated.
+
+### Continuation
+
+Once a guess has been identified the program asks the user to provide feedback for each of the positional letters. This feedback is then used to reduce the remaining word list in preparation for the next iteration.
+
+### Conclusion
+
+The program stops when either:
+
+- the remaining word list reduces to a single entry, in which case a solution is found;
+- it correctly selects the solution at random (fluke!) from the list of remaining words;
+- no solution was found after six attempts (sad face);
+- no more remaining words are available to make a new guess, possibly indicating incorrect feedback or the word-list is outdated and needs refreshing from the game publisher.
 
 ## Example Output
 
@@ -54,8 +74,6 @@ Solved on the 3rd attempt
 ## Notes and Limitations
 
 This solver uses only the list of valid solutions, excluding the larger set of valid _guess words_, which may be incorporated in future optimizations, where we are looking to eliminate as many letters as possible from the remaining set of untapped letters.
-
-A major weakness of this solver is that it makes correctly placed letters sticky, leading to inefficiencies when multiple options exist. For instance, starting with WATCH and confirming the last four letters leaves B, C, L, M, and P as possible first letters, risking exhaustion of all five remaining guesses. To ensure a solution in exactly two more attempts, we could guess CLIMB, then use elimination — falling back to P if needed — to identify the correct letter before submitting the final answer. I plan to incorporate this technique at a later date once I spot a scenario where the algorithm fails in 6 guesses.
 
 Problematic seeds can be established by running test `Solve_DynamicFeedback_MultipleSeeds_ShouldFindSolutionWithinSixAttempts`. Once found the solution and problematic seed can be added to test `Solve_DynamicFeedback_ProblematicSeeds_ShouldFindSolutionWithinSixAttempts` for further debugging / investigation / algorithm optimisation.
 
