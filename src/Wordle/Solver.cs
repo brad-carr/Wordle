@@ -43,7 +43,7 @@ public sealed class Solver
         Random random
     )
     {
-        var remainingWords = _solutionWordList.ToArray();
+        var remainingWords = _solutionWordList;
         var solution = Enumerable.Repeat(' ', WordLength).ToArray();
         var guesses = new List<string>(MaxAttempts);
         var numAttempts = 0;
