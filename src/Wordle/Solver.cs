@@ -178,10 +178,7 @@ public sealed class Solver(IConsole console, IFeedbackProvider feedbackProvider)
         }
     }
 
-    private static string[] GetNextWords(
-        char[] solution,
-        string[] remainingWords
-    )
+    private static string[] GetNextWords(char[] solution, string[] remainingWords)
     {
         var remainingIndexes = solution
             .Select((c, i) => (c, i))
@@ -196,16 +193,13 @@ public sealed class Solver(IConsole console, IFeedbackProvider feedbackProvider)
                     (
                         i,
                         x: remainingWords
-                            .GroupBy(w => w[i], (key, words) => (i, c: key, n: words.Count()))
+                            .GroupBy(w => w[i], (_, words) => (words, n: words.Count()))
                             .MaxBy(x => x.n)
                     )
                 )
-                .MaxBy(y => y.x.n) // find the most common character across all positions
-                .x;
+                .MaxBy(y => y.x.n); // find the most common character across all positions
 
-            // filter remaining words by those having the most popular character
-            remainingWords = remainingWords.Where(w => w[next.i] == next.c).ToArray();
-
+            remainingWords = next.x.words.ToArray();
             remainingIndexes.Remove(next.i); // mark position as visited and repeat
         }
 
