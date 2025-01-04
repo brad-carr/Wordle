@@ -6,8 +6,11 @@ using Wordle;
 using Wordle.Feedback;
 using Wordle.Interaction;
 
-public sealed class SolverTests
+[Collection("SolverCollection")]
+public sealed class SolverTests(SolverFixture fixture)
 {
+    private readonly SolverFixture _fixture = fixture;
+
     [Theory]
     [InlineData(20241260, "mambo")] // fixed in commit 386c6c442ba2f515b08c769c53d6c253ba1c0b37
     [InlineData(20241295, "mambo")] // fixed in commit 2134bc918dab9cc7c39e1bf81fe0c59bfe605d24
@@ -44,7 +47,7 @@ public sealed class SolverTests
         failureReason.Should().BeNull();
     }
 
-    [Theory]//(Skip = "Use this test to find problematic seeds for which the solver fails")]
+    [Theory] //(Skip = "Use this test to find problematic seeds for which the solver fails")]
     [InlineData("2024-12-27", "grain")]
     [InlineData("2024-12-28", "decry")]
     [InlineData("2024-12-29", "mambo")]
@@ -80,7 +83,7 @@ public sealed class SolverTests
         RunScenario(publicationDateLiteral, solution, 1);
     }
 
-    private static void RunScenario(
+    private void RunScenario(
         string publicationDateLiteral,
         string solution,
         int numConsecutiveSeedsToTest
@@ -90,7 +93,7 @@ public sealed class SolverTests
         var publicationDate = DateOnly.Parse(publicationDateLiteral);
         var console = Mock.Of<IConsole>();
         var feedbackProvider = new DynamicFeedbackProvider(solution);
-        var solver = new Solver(console, feedbackProvider);
+        var solver = new Solver(console, feedbackProvider, _fixture.WordList);
         var initialSeed = Solver.GetSeed(publicationDate);
         var currentSeed = initialSeed;
 
@@ -170,4 +173,14 @@ public sealed class SolverTests
         feedbackProviderMock.VerifyAll();
         failureReason.Should().Be("failed to acquire feedback for guess");
     }
+}
+
+[CollectionDefinition("SolverCollection")]
+public sealed class SolverCollection : ICollectionFixture<SolverFixture> { }
+
+public sealed class SolverFixture
+{
+    public SolverFixture() => WordList = WordListReader.EnumerateLines().ToArray();
+
+    public string[] WordList { get; }
 }
