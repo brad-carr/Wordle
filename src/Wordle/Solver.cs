@@ -180,24 +180,22 @@ public sealed class Solver(IConsole console, IFeedbackProvider feedbackProvider)
 
     private static string[] GetNextWords(
         char[] solution,
-        IReadOnlyCollection<string> remainingWords
+        string[] remainingWords
     )
     {
-        var filteredWords = remainingWords.ToArray();
-
         var remainingIndexes = solution
             .Select((c, i) => (c, i))
             .Where(x => x.c == ' ')
             .Select(x => x.i)
             .ToList();
 
-        while (remainingIndexes.Count > 0 && filteredWords.Length > 1)
+        while (remainingIndexes.Count > 0 && remainingWords.Length > 1)
         {
             var next = remainingIndexes
                 .Select(i => // find the most commonly occurring character in filteredWords at position i
                     (
                         i,
-                        x: filteredWords
+                        x: remainingWords
                             .GroupBy(w => w[i], (key, words) => (i, c: key, n: words.Count()))
                             .MaxBy(x => x.n)
                     )
@@ -206,12 +204,12 @@ public sealed class Solver(IConsole console, IFeedbackProvider feedbackProvider)
                 .x;
 
             // filter remaining words by those having the most popular character
-            filteredWords = filteredWords.Where(w => w[next.i] == next.c).ToArray();
+            remainingWords = remainingWords.Where(w => w[next.i] == next.c).ToArray();
 
             remainingIndexes.Remove(next.i); // mark position as visited and repeat
         }
 
-        return filteredWords;
+        return remainingWords;
     }
 
     internal static int GetSeed(DateOnly publicationDate) =>
