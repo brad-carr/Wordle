@@ -5,13 +5,26 @@ using Wordle.Interaction;
 
 namespace Wordle;
 
-public sealed class Solver(IConsole console, IFeedbackProvider feedbackProvider)
+public sealed class Solver
 {
     public const int WordLength = 5;
     public const int MaxAttempts = 6;
 
-    private readonly IConsole _console = console;
     internal static readonly string SolvedFeedback = new('c', WordLength);
+
+    private readonly IConsole _console;
+    private readonly IFeedbackProvider _feedbackProvider;
+    private readonly string[] _wordList;
+
+    public Solver(IConsole console, IFeedbackProvider feedbackProvider, string[] wordList) =>
+        (_console, _feedbackProvider, _wordList) = (console, feedbackProvider, wordList);
+
+    public Solver(IConsole console, IFeedbackProvider feedbackProvider) =>
+        (_console, _feedbackProvider, _wordList) = (
+            console,
+            feedbackProvider,
+            WordListReader.EnumerateLines().ToArray()
+        );
 
     public (string? solution, IReadOnlyCollection<string> guesses, string? reason) Solve(
         DateOnly publicationDate
@@ -31,7 +44,7 @@ public sealed class Solver(IConsole console, IFeedbackProvider feedbackProvider)
         var solution = Enumerable.Repeat(' ', WordLength).ToArray();
         var guesses = new List<string>(MaxAttempts);
         var numAttempts = 0;
-        var isDynamicFeedbackProvider = feedbackProvider is DynamicFeedbackProvider;
+        var isDynamicFeedbackProvider = _feedbackProvider is DynamicFeedbackProvider;
 
         while (numAttempts < MaxAttempts)
         {
@@ -84,7 +97,7 @@ public sealed class Solver(IConsole console, IFeedbackProvider feedbackProvider)
                 $"Suggestion $magenta({numAttempts}): $green({guess.ToUpper()}) - out of $magenta({"possibility".ToQuantity(remainingWords.Length)})"
             );
 
-            var feedback = feedbackProvider.GetFeedback(guess, remainingWords.Length);
+            var feedback = _feedbackProvider.GetFeedback(guess, remainingWords.Length);
             if (feedback == null)
             {
                 return (null, guesses, "failed to acquire feedback for guess");
@@ -174,7 +187,7 @@ public sealed class Solver(IConsole console, IFeedbackProvider feedbackProvider)
 
         foreach (var i in solvedIndexes)
         {
-            solution[i] = remainingWords.First()[i];
+            solution[i] = remainingWords[0][i];
         }
     }
 
