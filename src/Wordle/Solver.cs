@@ -47,11 +47,10 @@ public sealed class Solver(IConsole console, IFeedbackProvider feedbackProvider)
                 isDynamicFeedbackProvider
                 && remainingAttempts > 1 // this technique requires at least 2 attempts to work
                 && remainingWords.Length > remainingAttempts // exhaustion of attempts possible
-                && solution.ContainsOnce(' ') // only one character left to solve
+                && solution.ContainsOnce(' ', out var unsolvedCharPosition)
             )
             {
                 // Find a word that contains the most unsolved characters to maximize the number of words eliminated
-                var unsolvedCharPosition = Array.IndexOf(solution, ' ');
                 var unsolvedCharCandidates = remainingWords
                     .Select(w => w[unsolvedCharPosition])
                     .Distinct()
@@ -61,7 +60,7 @@ public sealed class Solver(IConsole console, IFeedbackProvider feedbackProvider)
                     .GroupBy(word =>
                         unsolvedCharCandidates.Count(u =>
                             !solution.Contains(u) // favour characters not yet in the solution
-                            && word.ContainsOnce(u) // favour characters with unique occurrences in the word to maximize elimination scope
+                            && word.ContainsOnce(u, out _) // favour characters with unique occurrences in the word to maximize elimination scope
                         )
                     )
                     .MaxBy(g => g.Key)! // group matching most criteria

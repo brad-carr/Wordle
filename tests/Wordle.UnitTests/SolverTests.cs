@@ -53,6 +53,7 @@ public sealed class SolverTests
     [InlineData("2025-01-01", "nerve")]
     [InlineData("2025-01-02", "chose")]
     [InlineData("2025-01-03", "cheap")]
+    [InlineData("2025-01-04", "relax")]
     public void Solve_DynamicFeedback_MultipleSeeds_ShouldFindSolutionWithinSixAttempts(
         string publicationDateLiteral,
         string solution
@@ -70,6 +71,7 @@ public sealed class SolverTests
     [InlineData("2025-01-01", "nerve")]
     [InlineData("2025-01-02", "chose")]
     [InlineData("2025-01-03", "cheap")]
+    [InlineData("2025-01-04", "relax")]
     public void Solve_DynamicFeedback_NaturalSeed_ShouldFindSolutionWithinSixAttempts(
         string publicationDateLiteral,
         string solution

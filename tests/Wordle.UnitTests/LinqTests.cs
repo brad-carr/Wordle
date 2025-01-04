@@ -34,17 +34,23 @@ public sealed class LinqTests
     }
 
     [Theory]
-    [InlineData(new[] { 1, 2, 3, 4, 5 }, 3, true)]
-    [InlineData(new[] { 1, 2, 3, 3, 5 }, 3, false)]
-    [InlineData(new[] { 1, 2, 4, 5 }, 3, false)]
-    [InlineData(new[] { 1, 1, 1 }, 1, false)]
-    [InlineData(new int[] { }, 1, false)]
-    public void ContainsOnce_ShouldReturnExpectedResult(int[] items, int value, bool expected)
+    [InlineData(new[] { 1, 2, 3, 4, 5 }, 3, true, 2)]
+    [InlineData(new[] { 1, 2, 3, 3, 5 }, 3, false, -1)]
+    [InlineData(new[] { 1, 2, 4, 5 }, 3, false, -1)]
+    [InlineData(new[] { 1, 1, 1 }, 1, false, -1)]
+    [InlineData(new int[] { }, 1, false, -1)]
+    public void ContainsOnce_ShouldReturnExpectedResult(
+        int[] items,
+        int value,
+        bool expected,
+        int expectedIndex
+    )
     {
         // Act
-        var result = items.ContainsOnce(value);
+        var result = items.ContainsOnce(value, out var index);
 
         // Assert
         result.Should().Be(expected);
+        index.Should().Be(expectedIndex);
     }
 }
