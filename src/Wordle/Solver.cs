@@ -14,17 +14,21 @@ public sealed class Solver
 
     private readonly IConsole _console;
     private readonly IFeedbackProvider _feedbackProvider;
-    private readonly string[] _wordList;
+    private readonly string[] _solutionWordList;
 
-    public Solver(IConsole console, IFeedbackProvider feedbackProvider, string[] wordList) =>
-        (_console, _feedbackProvider, _wordList) = (console, feedbackProvider, wordList);
-
-    public Solver(IConsole console, IFeedbackProvider feedbackProvider) =>
-        (_console, _feedbackProvider, _wordList) = (
+    public Solver(
+        IConsole console,
+        IFeedbackProvider feedbackProvider,
+        string[] solutionWordList
+    ) =>
+        (_console, _feedbackProvider, _solutionWordList) = (
             console,
             feedbackProvider,
-            WordListReader.EnumerateLines().ToArray()
+            solutionWordList
         );
+
+    public Solver(IConsole console, IFeedbackProvider feedbackProvider)
+        : this(console, feedbackProvider, WordListReader.EnumerateLines().ToArray()) { }
 
     public (string? solution, IReadOnlyCollection<string> guesses, string? reason) Solve(
         DateOnly publicationDate
@@ -39,8 +43,7 @@ public sealed class Solver
         Random random
     )
     {
-        var allWords = WordListReader.EnumerateLines().ToArray();
-        var remainingWords = allWords.ToArray();
+        var remainingWords = _solutionWordList.ToArray();
         var solution = Enumerable.Repeat(' ', WordLength).ToArray();
         var guesses = new List<string>(MaxAttempts);
         var numAttempts = 0;
@@ -69,7 +72,7 @@ public sealed class Solver
                     .Distinct()
                     .ToArray();
 
-                guess = allWords //TODO: use full wordle guess list here, not just the solution list
+                guess = _solutionWordList //TODO: use full wordle guess list here, not just the solution list
                     .GroupBy(word =>
                         unsolvedCharCandidates.Count(u =>
                             !solution.Contains(u) // favour characters not yet in the solution
