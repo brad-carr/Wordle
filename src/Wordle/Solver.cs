@@ -189,7 +189,7 @@ public sealed class Solver(IConsole console, IFeedbackProvider feedbackProvider)
             .Select((c, i) => (c, i))
             .Where(x => x.c == ' ')
             .Select(x => x.i)
-            .ToHashSet();
+            .ToList();
 
         while (remainingIndexes.Count > 0 && filteredWords.Length > 1)
         {
