@@ -7,9 +7,14 @@ using Wordle.Feedback;
 using Wordle.Interaction;
 
 [Collection("SolverCollection")]
-public sealed class SolverTests(SolverFixture fixture)
+public sealed class SolverTests
 {
-    private readonly SolverFixture _fixture = fixture;
+    private readonly SolverFixture _fixture;
+
+    public SolverTests(SolverFixture fixture)
+    {
+        _fixture = fixture;
+    }
 
     [Theory]
     [InlineData(20241260, "mambo")] // fixed in commit 386c6c442ba2f515b08c769c53d6c253ba1c0b37
