@@ -205,17 +205,18 @@ public sealed class Solver
         while (remainingIndexes.Count > 0 && remainingWords.Length > 1)
         {
             var next = remainingIndexes
-                .Select(i => // find the most commonly occurring character in filteredWords at position i
+                .Select(i => // find words matching the most commonly occurring character in remainingWords at position i
                     (
                         i,
-                        x: remainingWords
-                            .GroupBy(w => w[i], (_, words) => (words, n: words.Count()))
-                            .MaxBy(x => x.n)
+                        matches: remainingWords
+                            .GroupBy(w => w[i])
+                            .Select(g => g.ToArray())
+                            .MaxBy(words => words.Length)!
                     )
                 )
-                .MaxBy(y => y.x.n); // find the most common character across all positions
+                .MaxBy(y => y.matches.Length); // find the most common character across all positions
 
-            remainingWords = next.x.words.ToArray();
+            remainingWords = next.matches;
             remainingIndexes.Remove(next.i); // mark position as visited and repeat
         }
 
