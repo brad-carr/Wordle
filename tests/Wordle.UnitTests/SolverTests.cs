@@ -3,8 +3,8 @@
 using FluentAssertions;
 using Moq;
 using Wordle;
-using Wordle.Feedback;
-using Wordle.Interaction;
+using Feedback;
+using Interaction;
 
 [Collection("SolverCollection")]
 public sealed class SolverTests
@@ -191,3 +191,4 @@ public sealed class SolverFixture
 
     public string[] WordList { get; }
 }
+

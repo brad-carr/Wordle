@@ -1,4 +1,5 @@
 using Humanizer;
+using Wordle.Core;
 using Wordle.Feedback;
 using Wordle.Interaction;
 
@@ -51,7 +52,7 @@ public sealed class Solver
         while (numAttempts < MaxAttempts)
         {
             var remainingAttempts = MaxAttempts - numAttempts++;
-            int[]? feedbackIndexesToProcess = null;
+            var feedbackIndexesToProcess = new BitMask();
 
             string? guess = null;
             if (remainingWords.Length == 1)
@@ -83,10 +84,13 @@ public sealed class Solver
 
                 if (guess != null)
                 {
-                    feedbackIndexesToProcess = Enumerable
-                        .Range(0, guess.Length)
-                        .Where(i => unsolvedCharCandidates.Contains(guess[i]))
-                        .ToArray();
+                    for (var i = 0; i < WordLength; i++)
+                    {
+                        if (unsolvedCharCandidates.Contains(guess[i]))
+                        {
+                            feedbackIndexesToProcess = feedbackIndexesToProcess.Set(i);
+                        }
+                    }
                 }
             }
 
@@ -112,14 +116,14 @@ public sealed class Solver
             var operations = feedback
                 .Zip(guess)
                 .Select((x, i) => (f: x.First, c: x.Second, i))
-                .Where(x =>
-                    feedbackIndexesToProcess == null
+                .Where(x => 
+                    feedbackIndexesToProcess.IsEmpty
                         ? solution[x.i] != x.c // skip already solved positional indexes
-                        : feedbackIndexesToProcess.Contains(x.i) // process only specific indexes
+                        : feedbackIndexesToProcess[x.i] // process only specific indexes 
                 )
                 .OrderBy(x => x.f); // ensures processing order 'c' -> 'm' -> 'n'
 
-            var misplacedCharBitMask = 0;
+            var misplacedCharIndexes = new BitMask();
             foreach (var (f, c, i) in operations)
             {
                 switch (f)
@@ -129,7 +133,7 @@ public sealed class Solver
                         remainingWords = remainingWords.Where(w => w[i] == c).ToArray();
                         break;
                     case FeedbackOption.Misplaced:
-                        misplacedCharBitMask |= 1 << c & 31;
+                        misplacedCharIndexes = misplacedCharIndexes.Set(c & 31);
                         var unsolvedIndexes = Enumerable
                             .Range(0, WordLength)
                             .Where(j => j != i && solution[j] == ' ')
@@ -139,7 +143,7 @@ public sealed class Solver
                             .ToArray();
                         break;
                     case FeedbackOption.NoMoreOccurrences:
-                        if ((misplacedCharBitMask & 1 << c & 31) > 0)
+                        if (misplacedCharIndexes[c & 31])
                         {
                             // skip if same character misplaced elsewhere
                             // required for seed test to pass: [InlineData(20241295, "mambo")]
@@ -183,7 +187,7 @@ public sealed class Solver
         {
             var firstRemainingWord = remainingWords[0];
 
-            for (int i = 0; i < WordLength; i++)
+            for (var i = 0; i < WordLength; i++)
             {
                 if (solution[i] != ' ')
                 {
@@ -192,7 +196,7 @@ public sealed class Solver
 
                 var allMatch = true;
                 var charToMatch = firstRemainingWord[i];
-                for (int j = 1; j < remainingWords.Length; j++)
+                for (var j = 1; j < remainingWords.Length; j++)
                 {
                     if (remainingWords[j][i] != charToMatch)
                     {
