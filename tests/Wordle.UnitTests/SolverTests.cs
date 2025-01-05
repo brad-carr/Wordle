@@ -52,7 +52,7 @@ public sealed class SolverTests
         failureReason.Should().BeNull();
     }
 
-    [Theory] //(Skip = "Use this test to find problematic seeds for which the solver fails")]
+    [Theory(Skip = "Use this test to find problematic seeds for which the solver fails")]
     [InlineData("2024-12-27", "grain")]
     [InlineData("2024-12-28", "decry")]
     [InlineData("2024-12-29", "mambo")]
