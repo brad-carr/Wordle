@@ -213,11 +213,14 @@ public sealed class Solver
 
     private static string[] GetNextWords(char[] solution, string[] remainingWords)
     {
-        var remainingIndexes = solution
-            .Select((c, i) => (c, i))
-            .Where(x => x.c == ' ')
-            .Select(x => x.i)
-            .ToList();
+        var remainingIndexes = new List<int>(WordLength);
+        for (var i = 0; i < WordLength; i++)
+        {
+            if (solution[i] == ' ')
+            {
+                remainingIndexes.Add(i);
+            }
+        }
 
         while (remainingIndexes.Count > 0 && remainingWords.Length > 1)
         {
