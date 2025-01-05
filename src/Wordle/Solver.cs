@@ -1,4 +1,3 @@
-using System.Collections.Immutable;
 using Humanizer;
 using Wordle.Feedback;
 using Wordle.Interaction;
@@ -120,8 +119,7 @@ public sealed class Solver
                 )
                 .OrderBy(x => x.f); // ensures processing order 'c' -> 'm' -> 'n'
 
-            var misplacedChars = new HashSet<char>();
-
+            var misplacedCharBitMask = 0;
             foreach (var (f, c, i) in operations)
             {
                 switch (f)
@@ -131,7 +129,7 @@ public sealed class Solver
                         remainingWords = remainingWords.Where(w => w[i] == c).ToArray();
                         break;
                     case FeedbackOption.Misplaced:
-                        misplacedChars.Add(c);
+                        misplacedCharBitMask |= 1 << c & 31;
                         var unsolvedIndexes = Enumerable
                             .Range(0, WordLength)
                             .Where(j => j != i && solution[j] == ' ')
@@ -141,7 +139,7 @@ public sealed class Solver
                             .ToArray();
                         break;
                     case FeedbackOption.NoMoreOccurrences:
-                        if (misplacedChars.Contains(c))
+                        if ((misplacedCharBitMask & 1 << c & 31) > 0)
                         {
                             // skip if same character misplaced elsewhere
                             // required for seed test to pass: [InlineData(20241295, "mambo")]
