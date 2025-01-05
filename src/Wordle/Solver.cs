@@ -181,16 +181,33 @@ public sealed class Solver
 
     private static void AddCommonPositionalCharsToSolution(string[] remainingWords, char[] solution)
     {
-        var firstRemainingWord = remainingWords[0];
-        var solvedIndexes = Enumerable
-            .Range(0, WordLength)
-            .Where(i =>
-                solution[i] == ' ' && remainingWords.All(w => w[i] == firstRemainingWord[i])
-            );
-
-        foreach (var i in solvedIndexes)
+        unchecked
         {
-            solution[i] = remainingWords[0][i];
+            var firstRemainingWord = remainingWords[0];
+
+            for (int i = 0; i < WordLength; i++)
+            {
+                if (solution[i] != ' ')
+                {
+                    continue;
+                }
+
+                var allMatch = true;
+                var charToMatch = firstRemainingWord[i];
+                for (int j = 1; j < remainingWords.Length; j++)
+                {
+                    if (remainingWords[j][i] != charToMatch)
+                    {
+                        allMatch = false;
+                        break;
+                    }
+                }
+
+                if (allMatch)
+                {
+                    solution[i] = charToMatch;
+                }
+            }
         }
     }
 
