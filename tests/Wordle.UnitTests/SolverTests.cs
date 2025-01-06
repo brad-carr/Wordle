@@ -48,7 +48,7 @@ public sealed class SolverTests
             );
         guesses
             .Count.Should()
-            .BeLessOrEqualTo(6, $"guesses were {string.Join($" {Unicode.RightArrow} ", guesses)}");
+            .BeLessOrEqualTo(Solver.MaxAttempts, $"guesses were {string.Join($" {Unicode.RightArrow} ", guesses)}");
         failureReason.Should().BeNull();
     }
 
@@ -127,7 +127,7 @@ public sealed class SolverTests
                 guesses
                     .Count.Should()
                     .BeLessOrEqualTo(
-                        6,
+                        Solver.MaxAttempts,
                         $"seed was {currentSeed}, guesses were {string.Join($" {Unicode.RightArrow} ", guesses)}, failure reason was {failureReason}"
                     );
                 failureReason.Should().BeNull();
