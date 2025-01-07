@@ -5,6 +5,7 @@ using Moq;
 using Wordle;
 using Feedback;
 using Interaction;
+using Xunit;
 
 [Collection("SolverCollection")]
 public sealed class SolverTests
@@ -53,17 +54,7 @@ public sealed class SolverTests
     }
 
     [Theory(Skip = "Use this test to find problematic seeds for which the solver fails")]
-    [InlineData("2024-12-27", "grain")]
-    [InlineData("2024-12-28", "decry")]
-    [InlineData("2024-12-29", "mambo")]
-    [InlineData("2024-12-30", "stare")]
-    [InlineData("2024-12-31", "lemur")]
-    [InlineData("2025-01-01", "nerve")]
-    [InlineData("2025-01-02", "chose")]
-    [InlineData("2025-01-03", "cheap")]
-    [InlineData("2025-01-04", "relax")]
-    [InlineData("2025-01-05", "cyber")]
-    [InlineData("2025-01-06", "sprig")]
+    [MemberData(nameof(NytDailySolutions))]
     public void Solve_DynamicFeedback_MultipleSeeds_ShouldFindSolutionWithinSixAttempts(
         string publicationDateLiteral,
         string solution
@@ -73,17 +64,7 @@ public sealed class SolverTests
     }
 
     [Theory]
-    [InlineData("2024-12-27", "grain")]
-    [InlineData("2024-12-28", "decry")]
-    [InlineData("2024-12-29", "mambo")]
-    [InlineData("2024-12-30", "stare")]
-    [InlineData("2024-12-31", "lemur")]
-    [InlineData("2025-01-01", "nerve")]
-    [InlineData("2025-01-02", "chose")]
-    [InlineData("2025-01-03", "cheap")]
-    [InlineData("2025-01-04", "relax")]
-    [InlineData("2025-01-05", "cyber")]
-    [InlineData("2025-01-06", "sprig")]
+    [MemberData(nameof(NytDailySolutions))]
     public void Solve_DynamicFeedback_NaturalSeed_ShouldFindSolutionWithinSixAttempts(
         string publicationDateLiteral,
         string solution
@@ -102,7 +83,7 @@ public sealed class SolverTests
         var publicationDate = DateOnly.Parse(publicationDateLiteral);
         var console = Mock.Of<IConsole>();
         var feedbackProvider = new DynamicFeedbackProvider(solution);
-        var solver = new Solver(console, feedbackProvider, _fixture.WordList);
+        var solver = new Solver(console, feedbackProvider, _fixture.SolutionWordList, _fixture.GuessWordList);
         var initialSeed = Solver.GetSeed(publicationDate);
         var currentSeed = initialSeed;
 
@@ -182,6 +163,22 @@ public sealed class SolverTests
         feedbackProviderMock.VerifyAll();
         failureReason.Should().Be("failed to acquire feedback for guess");
     }
+    
+    public static TheoryData<string, string> NytDailySolutions => new()
+    {
+        { "2024-12-27", "grain" },
+        { "2024-12-28", "decry" },
+        { "2024-12-29", "mambo" },
+        { "2024-12-30", "stare" },
+        { "2024-12-31", "lemur" },
+        { "2025-01-01", "nerve" },
+        { "2025-01-02", "chose" },
+        { "2025-01-03", "cheap" },
+        { "2025-01-04", "relax" },
+        { "2025-01-05", "cyber" },
+        { "2025-01-06", "sprig" },
+        { "2025-01-07", "atlas" },
+    };
 }
 
 [CollectionDefinition("SolverCollection")]
@@ -189,8 +186,12 @@ public sealed class SolverCollection : ICollectionFixture<SolverFixture> { }
 
 public sealed class SolverFixture
 {
-    public SolverFixture() => WordList = WordListReader.EnumerateLines().ToArray();
+    public SolverFixture()
+    {
+        SolutionWordList = WordListReader.EnumerateSolutionWords().ToArray();
+        GuessWordList = WordListReader.EnumerateGuessWords().ToArray();
+    }
 
-    public string[] WordList { get; }
+    public string[] GuessWordList { get; }
+    public string[] SolutionWordList { get; }
 }
-

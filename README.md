@@ -82,4 +82,6 @@ Challenging seeds can be identified using the test `Solve_DynamicFeedback_Multip
 
 ## Credits
 
-The [wordlist.txt](https://github.com/brad-carr/WordleSolver/blob/master/src/Wordle/wordlist.txt) file was sourced from [Cyrus Freshman's wordlist](https://gist.github.com/cfreshman/a03ef2cba789d8cf00c08f767e0fad7b).
+1. [solution-word-list.txt](https://github.com/brad-carr/WordleSolver/blob/master/src/Wordle/solution-word-list.txt) was cloned from [Cyrus Freshman's](https://gist.github.com/cfreshman/a03ef2cba789d8cf00c08f767e0fad7b) word list with the following additions:
+   - `atlas`, solution on 7-Jan-25
+1. [guess-word-list.txt](https://github.com/brad-carr/WordleSolver/blob/master/src/Wordle/guess-word-list.txt) was cloned from [M Somerville's](https://gist.github.com/dracos/dd0668f281e685bad51479e5acaadb93) word list.

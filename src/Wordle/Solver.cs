@@ -15,20 +15,23 @@ public sealed class Solver
     private readonly IConsole _console;
     private readonly IFeedbackProvider _feedbackProvider;
     private readonly string[] _solutionWordList;
-
+    private readonly string[] _guessWordList;
+    
     public Solver(
         IConsole console,
         IFeedbackProvider feedbackProvider,
-        string[] solutionWordList
+        string[] solutionWordList,
+        string[] guessWordList
     ) =>
-        (_console, _feedbackProvider, _solutionWordList) = (
+        (_console, _feedbackProvider, _solutionWordList, _guessWordList) = (
             console,
             feedbackProvider,
-            solutionWordList
+            solutionWordList,
+            guessWordList
         );
 
     public Solver(IConsole console, IFeedbackProvider feedbackProvider)
-        : this(console, feedbackProvider, WordListReader.EnumerateLines().ToArray()) { }
+        : this(console, feedbackProvider, WordListReader.EnumerateSolutionWords().ToArray(), WordListReader.EnumerateGuessWords().ToArray()) { }
 
     public (string? solution, IReadOnlyCollection<string> guesses, string? reason) Solve(
         DateOnly publicationDate
@@ -72,7 +75,7 @@ public sealed class Solver
                     .Distinct()
                     .ToArray();
 
-                guess = _solutionWordList //TODO: use full wordle guess list here, not just the solution list
+                guess = _guessWordList
                     .GroupBy(word =>
                         unsolvedCharCandidates.Count(u =>
                             !solution.Contains(u) // favour characters not yet in the solution

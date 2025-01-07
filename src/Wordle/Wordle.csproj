@@ -8,7 +8,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="Resources/wordlist.txt" />
+    <EmbeddedResource Include="Resources\solution-word-list.txt" />
+    <EmbeddedResource Include="Resources\guess-word-list.txt" />
   </ItemGroup>
 
   <ItemGroup>
