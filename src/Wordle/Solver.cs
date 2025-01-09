@@ -122,7 +122,7 @@ public sealed class Solver
                 .Where(x => 
                     feedbackIndexesToProcess.IsEmpty
                         ? solution[x.i] != x.c // skip already solved positional indexes
-                        : feedbackIndexesToProcess[x.i] // process only specific indexes 
+                        : feedbackIndexesToProcess.IsSet(x.i) // process only specific indexes 
                 )
                 .OrderBy(x => x.f); // ensures processing order 'c' -> 'm' -> 'n'
 
@@ -146,7 +146,7 @@ public sealed class Solver
                             .ToArray();
                         break;
                     case FeedbackOption.NoMoreOccurrences:
-                        if (misplacedCharIndexes[c & 31])
+                        if (misplacedCharIndexes.IsSet(c & 31))
                         {
                             // skip if same character misplaced elsewhere
                             // required for seed test to pass: [InlineData(20241295, "mambo")]
@@ -216,18 +216,18 @@ public sealed class Solver
         }
     }
 
-    private static string[] GetNextWords(char[] solution, string[] remainingWords)
+    private static IList<string> GetNextWords(char[] solution, IList<string> remainingWords)
     {
-        var remainingIndexes = new List<int>(WordLength);
+        var remainingIndexes = new BitMask();
         for (var i = 0; i < WordLength; i++)
         {
             if (solution[i] == ' ')
             {
-                remainingIndexes.Add(i);
+                remainingIndexes = remainingIndexes.Set(i);
             }
         }
 
-        while (remainingIndexes.Count > 0 && remainingWords.Length > 1)
+        while (remainingIndexes.HasSetBits && remainingWords.Count > 1)
         {
             var next = remainingIndexes
                 .Select(i => // find words matching the most commonly occurring character in remainingWords at position i
@@ -235,14 +235,14 @@ public sealed class Solver
                         i,
                         matches: remainingWords
                             .GroupBy(w => w[i])
-                            .Select(g => g.ToArray())
-                            .MaxBy(words => words.Length)!
+                            .Cast<IList<string>>()
+                            .MaxBy(words => words.Count)!
                     )
                 )
-                .MaxBy(y => y.matches.Length); // find the most common character across all positions
+                .MaxBy(y => y.matches.Count); // find the most common character across all positions
 
             remainingWords = next.matches;
-            remainingIndexes.Remove(next.i); // mark position as visited and repeat
+            remainingIndexes = remainingIndexes.Clear(next.i); // mark position as visited and repeat
         }
 
         return remainingWords;

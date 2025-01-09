@@ -178,6 +178,8 @@ public sealed class SolverTests
         { "2025-01-05", "cyber" },
         { "2025-01-06", "sprig" },
         { "2025-01-07", "atlas" },
+        { "2025-01-08", "draft" },
+        { "2025-01-09", "wafer" },
     };
 }
 
