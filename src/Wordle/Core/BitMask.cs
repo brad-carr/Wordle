@@ -6,6 +6,8 @@ namespace Wordle.Core;
 
 public readonly struct BitMask : IReadOnlyCollection<int>
 {
+    public static BitMask Empty { get; }= new();
+
     private readonly ulong _value;
 
     public BitMask()
@@ -26,6 +28,21 @@ public readonly struct BitMask : IReadOnlyCollection<int>
     
     public bool IsSet(int index) => ((1UL << index) & _value) > 0;
 
+    public int CountSetBitsWhere(Predicate<int> criteria)
+    {
+        var count = 0;
+        for (var x = _value; x != 0;)
+        {
+            if (criteria((int)Bmi1.X64.TrailingZeroCount(x)))
+            {
+                count++;
+            } 
+            x = Bmi1.X64.ResetLowestSetBit(x);
+        }
+
+        return count;
+    }
+    
     public IEnumerator<int> GetEnumerator()
     {
         for (var x = _value; x != 0;)

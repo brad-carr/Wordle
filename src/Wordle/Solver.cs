@@ -70,26 +70,26 @@ public sealed class Solver
             )
             {
                 // Find a word that contains the most unsolved characters to maximize the number of words eliminated
-                var unsolvedCharCandidates = remainingWords
-                    .Select(w => w[unsolvedCharPosition])
-                    .Distinct()
-                    .ToArray();
-
+                var unsolvedCharMask = remainingWords
+                    .Aggregate(
+                        BitMask.Empty, 
+                        (current, word) => current.Set(word[unsolvedCharPosition] - 'a'));
+                
                 guess = _guessWordList
                     .GroupBy(word =>
-                        unsolvedCharCandidates.Count(u =>
-                            !solution.Contains(u) // favour characters not yet in the solution
-                            && word.ContainsOnce(u, out _) // favour characters with unique occurrences in the word to maximize elimination scope
+                        unsolvedCharMask.CountSetBitsWhere(i => 
+                                !solution.Contains((char)('a' + i)) &&
+                                word.ContainsOnce((char)('a' + i), out _) // favour characters with unique occurrences in the word to maximize elimination scope
                         )
                     )
-                    .MaxBy(g => g.Key)! // group matching most criteria
+                    .MaxBy(g => g.Key)? // group matching most criteria
                     .RandomElement(random);
 
                 if (guess != null)
                 {
                     for (var i = 0; i < WordLength; i++)
                     {
-                        if (unsolvedCharCandidates.Contains(guess[i]))
+                        if (unsolvedCharMask.IsSet(guess[i] - 'a'))
                         {
                             feedbackIndexesToProcess = feedbackIndexesToProcess.Set(i);
                         }
@@ -136,7 +136,7 @@ public sealed class Solver
                         remainingWords = remainingWords.Where(w => w[i] == c).ToArray();
                         break;
                     case FeedbackOption.Misplaced:
-                        misplacedCharIndexes = misplacedCharIndexes.Set(c & 31);
+                        misplacedCharIndexes = misplacedCharIndexes.Set(c - 'a');
                         var unsolvedIndexes = Enumerable
                             .Range(0, WordLength)
                             .Where(j => j != i && solution[j] == ' ')
@@ -146,7 +146,7 @@ public sealed class Solver
                             .ToArray();
                         break;
                     case FeedbackOption.NoMoreOccurrences:
-                        if (misplacedCharIndexes.IsSet(c & 31))
+                        if (misplacedCharIndexes.IsSet(c - 'a'))
                         {
                             // skip if same character misplaced elsewhere
                             // required for seed test to pass: [InlineData(20241295, "mambo")]
@@ -201,11 +201,9 @@ public sealed class Solver
                 var charToMatch = firstRemainingWord[i];
                 for (var j = 1; j < remainingWords.Length; j++)
                 {
-                    if (remainingWords[j][i] != charToMatch)
-                    {
-                        allMatch = false;
-                        break;
-                    }
+                    if (remainingWords[j][i] == charToMatch) continue;
+                    allMatch = false;
+                    break;
                 }
 
                 if (allMatch)
