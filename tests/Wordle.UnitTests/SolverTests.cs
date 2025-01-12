@@ -182,6 +182,7 @@ public sealed class SolverTests
         { "2025-01-09", "wafer" },
         { "2025-01-10", "crawl" },
         { "2025-01-11", "dingy" },
+        { "2025-01-12", "total" },
     };
 }
 
