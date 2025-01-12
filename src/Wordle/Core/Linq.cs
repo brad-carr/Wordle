@@ -4,13 +4,12 @@ internal static class Linq
 {
     /// <summary>Chooses a random element from an array.</summary>
     public static T? RandomElement<T>(this T[] items, Random rand)
-        where T : class
     {
         unchecked
         {
             return items.Length switch
             {
-                0 => null,
+                0 => default,
                 1 => items[0],
                 _ => items[rand.Next(items.Length)],
             };
@@ -20,10 +19,9 @@ internal static class Linq
     /// <summary>Chooses a random element from a sequence, using only a single pass of the sequence.</summary>
     /// <remarks>Uses the Fisher-Yates reservoir sampling algorithm.</remarks>
     public static T? RandomElement<T>(this IEnumerable<T> items, Random rand)
-        where T : class
     {
         var i = 0;
-        T? selection = null;
+        T? selection = default;
         foreach (var item in items)
         {
             var next = rand.Next(++i);

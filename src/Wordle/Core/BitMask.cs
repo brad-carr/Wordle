@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Numerics;
 using System.Runtime.Intrinsics.X86;
+using JetBrains.Annotations;
 
 namespace Wordle.Core;
 
@@ -28,12 +29,12 @@ public readonly struct BitMask : IReadOnlyCollection<int>
     
     public bool IsSet(int index) => ((1UL << index) & _value) > 0;
 
-    public int CountSetBitsWhere(Predicate<int> criteria)
+    public int CountSetBitsWhere([InstantHandle] Predicate<byte> criteria)
     {
         var count = 0;
         for (var x = _value; x != 0;)
         {
-            if (criteria((int)Bmi1.X64.TrailingZeroCount(x)))
+            if (criteria((byte)Bmi1.X64.TrailingZeroCount(x)))
             {
                 count++;
             } 

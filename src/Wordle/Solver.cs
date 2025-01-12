@@ -14,8 +14,8 @@ public sealed class Solver
 
     private readonly IConsole _console;
     private readonly IFeedbackProvider _feedbackProvider;
-    private readonly string[] _solutionWordList;
-    private readonly string[] _guessWordList;
+    private readonly Word[] _solutionWordList;
+    private readonly Word[] _guessWordList;
     
     public Solver(
         IConsole console,
@@ -26,8 +26,8 @@ public sealed class Solver
         (_console, _feedbackProvider, _solutionWordList, _guessWordList) = (
             console,
             feedbackProvider,
-            solutionWordList,
-            guessWordList
+            solutionWordList.Select(Word.Create).ToArray(),
+            guessWordList.Select(Word.Create).ToArray()
         );
 
     public Solver(IConsole console, IFeedbackProvider feedbackProvider)
@@ -47,7 +47,7 @@ public sealed class Solver
     )
     {
         var remainingWords = _solutionWordList;
-        var solution = Enumerable.Repeat(' ', WordLength).ToArray();
+        var solution = Word.Empty;
         var guesses = new List<string>(MaxAttempts);
         var numAttempts = 0;
         var isDynamicFeedbackProvider = _feedbackProvider is DynamicFeedbackProvider;
@@ -57,7 +57,7 @@ public sealed class Solver
             var remainingAttempts = MaxAttempts - numAttempts++;
             var feedbackIndexesToProcess = new BitMask();
 
-            string? guess = null;
+            Word? guess = null;
             if (remainingWords.Length == 1)
             {
                 guess = remainingWords[0];
@@ -66,30 +66,30 @@ public sealed class Solver
                 isDynamicFeedbackProvider
                 && remainingAttempts > 1 // this technique requires at least 2 attempts to work
                 && remainingWords.Length > remainingAttempts // exhaustion of attempts possible
-                && solution.ContainsOnce(' ', out var unsolvedCharPosition)
+                && solution.ContainsOnce(0, out var unsolvedCharPosition)
             )
             {
                 // Find a word that contains the most unsolved characters to maximize the number of words eliminated
                 var unsolvedCharMask = remainingWords
                     .Aggregate(
                         BitMask.Empty, 
-                        (current, word) => current.Set(word[unsolvedCharPosition] - 'a'));
+                        (current, word) => current.Set(word[unsolvedCharPosition]));
                 
                 guess = _guessWordList
                     .GroupBy(word =>
-                        unsolvedCharMask.CountSetBitsWhere(i => 
-                                !solution.Contains((char)('a' + i)) &&
-                                word.ContainsOnce((char)('a' + i), out _) // favour characters with unique occurrences in the word to maximize elimination scope
+                        unsolvedCharMask.CountSetBitsWhere(c => 
+                                !solution.Contains(c) &&
+                                word.ContainsOnce(c, out _) // favour characters with unique occurrences in the word to maximize elimination scope
                         )
                     )
                     .MaxBy(g => g.Key)? // group matching most criteria
                     .RandomElement(random);
 
-                if (guess != null)
+                if (guess.HasValue)
                 {
                     for (var i = 0; i < WordLength; i++)
                     {
-                        if (unsolvedCharMask.IsSet(guess[i] - 'a'))
+                        if (unsolvedCharMask.IsSet(guess.Value[i]))
                         {
                             feedbackIndexesToProcess = feedbackIndexesToProcess.Set(i);
                         }
@@ -98,26 +98,27 @@ public sealed class Solver
             }
 
             // Fallback to the original approach: guess the word that eliminates the most possibilities
-            guess ??= GetNextWords(solution, remainingWords).RandomElement(random)!;
+            guess ??= GetNextWords(solution, remainingWords).RandomElement(random);
 
-            guesses.Add(guess);
+            var guessWord = guess.Value.ToString();
+            guesses.Add(guessWord!);
 
             _console.WriteLine(
-                $"Suggestion $magenta({numAttempts}): $green({guess.ToUpper()}) - out of $magenta({"possibility".ToQuantity(remainingWords.Length)})"
+                $"Suggestion $magenta({numAttempts}): $green({guessWord!.ToUpper()}) - out of $magenta({"possibility".ToQuantity(remainingWords.Length)})"
             );
 
-            var feedback = _feedbackProvider.GetFeedback(guess, remainingWords.Length);
+            var feedback = _feedbackProvider.GetFeedback(guessWord, remainingWords.Length);
             if (feedback == null)
             {
                 return (null, guesses, "failed to acquire feedback for guess");
             }
             if (feedback == SolvedFeedback)
             {
-                return (guess, guesses, null);
+                return (guessWord, guesses, null);
             }
-
+            
             var operations = feedback
-                .Zip(guess)
+                .Zip(guess.Value)
                 .Select((x, i) => (f: x.First, c: x.Second, i))
                 .Where(x => 
                     feedbackIndexesToProcess.IsEmpty
@@ -132,14 +133,14 @@ public sealed class Solver
                 switch (f)
                 {
                     case FeedbackOption.Correct:
-                        solution[i] = c;
+                        solution = solution.SetCharAtPos(c, i);
                         remainingWords = remainingWords.Where(w => w[i] == c).ToArray();
                         break;
                     case FeedbackOption.Misplaced:
                         misplacedCharIndexes = misplacedCharIndexes.Set(c - 'a');
                         var unsolvedIndexes = Enumerable
                             .Range(0, WordLength)
-                            .Where(j => j != i && solution[j] == ' ')
+                            .Where(j => j != i && solution[j] == 0)
                             .ToArray();
                         remainingWords = remainingWords
                             .Where(w => w[i] != c && unsolvedIndexes.Any(u => w[u] == c))
@@ -155,7 +156,7 @@ public sealed class Solver
 
                         for (var j = 0; j < WordLength && remainingWords.Length > 1; j++)
                         {
-                            if (solution[j] == ' ')
+                            if (solution[j] == 0)
                             {
                                 remainingWords = remainingWords.Where(w => w[j] != c).ToArray();
                             }
@@ -178,13 +179,13 @@ public sealed class Solver
                     continue;
             }
 
-            AddCommonPositionalCharsToSolution(remainingWords, solution);
+            AddCommonPositionalCharsToSolution(remainingWords, ref solution);
         }
 
         return (null, guesses, "maximum attempts reached without solution");
     }
 
-    private static void AddCommonPositionalCharsToSolution(string[] remainingWords, char[] solution)
+    private static void AddCommonPositionalCharsToSolution(Word[] remainingWords, ref Word solution)
     {
         unchecked
         {
@@ -192,7 +193,7 @@ public sealed class Solver
 
             for (var i = 0; i < WordLength; i++)
             {
-                if (solution[i] != ' ')
+                if (solution[i] > 0)
                 {
                     continue;
                 }
@@ -208,18 +209,18 @@ public sealed class Solver
 
                 if (allMatch)
                 {
-                    solution[i] = charToMatch;
+                    solution = solution.SetCharAtPos(charToMatch, i);
                 }
             }
         }
     }
 
-    private static IList<string> GetNextWords(char[] solution, IList<string> remainingWords)
+    private static IList<Word> GetNextWords(Word solution, IList<Word> remainingWords)
     {
         var remainingIndexes = new BitMask();
         for (var i = 0; i < WordLength; i++)
         {
-            if (solution[i] == ' ')
+            if (solution[i] == 0)
             {
                 remainingIndexes = remainingIndexes.Set(i);
             }
@@ -232,12 +233,11 @@ public sealed class Solver
                     (
                         i,
                         matches: remainingWords
-                            .GroupBy(w => w[i])
-                            .Cast<IList<string>>()
-                            .MaxBy(words => words.Count)!
+                            .GroupBy(w => w[i], (_, words) => words.ToArray())
+                            .MaxBy(words => words.Length)!
                     )
                 )
-                .MaxBy(y => y.matches.Count); // find the most common character across all positions
+                .MaxBy(y => y.matches.Length); // find the most common character across all positions
 
             remainingWords = next.matches;
             remainingIndexes = remainingIndexes.Clear(next.i); // mark position as visited and repeat
