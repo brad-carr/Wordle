@@ -1,18 +1,16 @@
 using System.Collections;
-using JetBrains.Annotations;
+using System.Diagnostics;
 
 namespace Wordle;
 
-internal readonly struct Word : IReadOnlyList<byte>
+[DebuggerDisplay("{ToString()} ({_bits})")]
+internal readonly struct Word : IReadOnlyList<byte>, IEquatable<Word>
 {
     public static Word Empty { get; } = new(0UL);
 
     private readonly ulong _bits;
 
-    private Word(ulong bits)
-    {
-        _bits = bits;
-    }
+    private Word(ulong bits) => _bits = bits;
 
     public int Count => Solver.WordLength;
 
@@ -126,4 +124,14 @@ internal readonly struct Word : IReadOnlyList<byte>
     }
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+    public bool Equals(Word other) => _bits == other._bits;
+
+    public override bool Equals(object? obj) => obj is Word other && Equals(other);
+
+    public override int GetHashCode() => _bits.GetHashCode();
+
+    public static bool operator ==(Word first, Word second) => first.Equals(second);
+
+    public static bool operator !=(Word first, Word second) => !(first == second);
 }
