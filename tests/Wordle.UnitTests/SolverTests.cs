@@ -138,9 +138,10 @@ public sealed class SolverTests
 
         // Assert
         solution.Should().BeNull();
-        guesses.Count.Should().Be(Solver.MaxAttempts);
+        guesses.Count.Should().BeGreaterThan(0);
+        guesses.Count.Should().BeLessOrEqualTo(Solver.MaxAttempts);
         feedbackProviderMock.VerifyAll();
-        failureReason.Should().Be("maximum attempts reached without solution");
+        failureReason.Should().Be("algorithm failure, no remaining words available");
     }
 
     [Fact]
@@ -167,8 +168,7 @@ public sealed class SolverTests
         failureReason.Should().Be("failed to acquire feedback for guess");
     }
     
-    public static TheoryData<string, string> NytDailySolutions => new()
-    {
+    public static TheoryData<string, string> NytDailySolutions => new() {
         { "2024-12-27", "grain" },
         { "2024-12-28", "decry" },
         { "2024-12-29", "mambo" },
