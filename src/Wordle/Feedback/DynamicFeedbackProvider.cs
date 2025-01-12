@@ -1,10 +1,13 @@
 namespace Wordle.Feedback;
 
-public sealed class DynamicFeedbackProvider(string Solution) : IFeedbackProvider
+public sealed class DynamicFeedbackProvider(Word Solution) : IFeedbackProvider
 {
-    public string? GetFeedback(string guess, int remainingWordCount)
+    public string? GetFeedback(Word guess, int remainingWordCount)
     {
-        guess = guess ?? throw new ArgumentNullException(nameof(guess));
+        if (guess == Word.Empty)
+        {
+            throw new ArgumentException("word is empty", nameof(guess));
+        }
 
         if (guess.Length != Solution.Length)
         {
@@ -49,7 +52,7 @@ public sealed class DynamicFeedbackProvider(string Solution) : IFeedbackProvider
         return new string(feedbackArray);
     }
 
-    private static void DecrementSieve(Dictionary<char, int> sieve, char c)
+    private static void DecrementSieve(Dictionary<byte, int> sieve, byte c)
     {
         if (!sieve.TryGetValue(c, out var count))
         {
@@ -59,9 +62,7 @@ public sealed class DynamicFeedbackProvider(string Solution) : IFeedbackProvider
         switch (count)
         {
             case 0:
-                throw new InvalidOperationException(
-                    $"Did not expect to find keys with zero value in sieve."
-                );
+                throw new InvalidOperationException("Did not expect to find keys with zero value in sieve.");
             case 1:
                 sieve.Remove(c);
                 break;

@@ -4,7 +4,7 @@ using System.Diagnostics;
 namespace Wordle;
 
 [DebuggerDisplay("{ToString()} ({_bits})")]
-internal readonly struct Word : IReadOnlyList<byte>, IEquatable<Word>
+public readonly struct Word : IReadOnlyList<byte>, IEquatable<Word>
 {
     public static Word Empty { get; } = new(0UL);
 
@@ -13,6 +13,8 @@ internal readonly struct Word : IReadOnlyList<byte>, IEquatable<Word>
     private Word(ulong bits) => _bits = bits;
 
     public int Count => Solver.WordLength;
+
+    public int Length => Solver.WordLength;
 
     public static Word Create(string word)
     {

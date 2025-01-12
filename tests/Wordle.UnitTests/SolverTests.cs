@@ -28,11 +28,12 @@ public sealed class SolverTests
     [InlineData(20241413, "grain")] // fixed in commit 6e3740e631d36a23d2daa6e6865dbdb3adf3b4e3
     public void Solve_DynamicFeedback_ProblematicSeeds_ShouldFindSolutionWithinSixAttempts(
         int problematicSeed,
-        string solution
+        string solutionLiteral
     )
     {
         // Arrange
         var console = Mock.Of<IConsole>();
+        var solution = Word.Create(solutionLiteral);
         var feedbackProvider = new DynamicFeedbackProvider(solution);
         var solver = new Solver(console, feedbackProvider);
         var random = new Random(problematicSeed);
@@ -60,6 +61,7 @@ public sealed class SolverTests
         string solution
     )
     {
+        Thread.CurrentThread.Priority = ThreadPriority.Highest;
         RunScenario(publicationDateLiteral, solution, 5000);
     }
 
@@ -75,13 +77,14 @@ public sealed class SolverTests
 
     private void RunScenario(
         string publicationDateLiteral,
-        string solution,
+        string solutionLiteral,
         int numConsecutiveSeedsToTest
     )
     {
         // Arrange
         var publicationDate = DateOnly.Parse(publicationDateLiteral);
         var console = Mock.Of<IConsole>();
+        var solution = Word.Create(solutionLiteral);
         var feedbackProvider = new DynamicFeedbackProvider(solution);
         var solver = new Solver(console, feedbackProvider, _fixture.SolutionWordList, _fixture.GuessWordList);
         var initialSeed = Solver.GetSeed(publicationDate);
@@ -125,7 +128,7 @@ public sealed class SolverTests
         var console = Mock.Of<IConsole>();
         var feedbackProviderMock = new Mock<IFeedbackProvider>(MockBehavior.Strict);
         feedbackProviderMock
-            .Setup(mock => mock.GetFeedback(It.IsAny<string>(), It.IsAny<int>()))
+            .Setup(mock => mock.GetFeedback(It.IsAny<Word>(), It.IsAny<int>()))
             .Returns("nnnnn");
 
         var solver = new Solver(console, feedbackProviderMock.Object);
@@ -149,7 +152,7 @@ public sealed class SolverTests
         var console = Mock.Of<IConsole>();
         var feedbackProviderMock = new Mock<IFeedbackProvider>(MockBehavior.Strict);
         feedbackProviderMock
-            .Setup(mock => mock.GetFeedback(It.IsAny<string>(), It.IsAny<int>()))
+            .Setup(mock => mock.GetFeedback(It.IsAny<Word>(), It.IsAny<int>()))
             .Returns((string)null!);
 
         var solver = new Solver(console, feedbackProviderMock.Object);

@@ -33,7 +33,7 @@ public sealed class Solver
     public Solver(IConsole console, IFeedbackProvider feedbackProvider)
         : this(console, feedbackProvider, WordListReader.EnumerateSolutionWords().ToArray(), WordListReader.EnumerateGuessWords().ToArray()) { }
 
-    public (string? solution, IReadOnlyCollection<string> guesses, string? reason) Solve(
+    public (Word? solution, IReadOnlyCollection<Word> guesses, string? reason) Solve(
         DateOnly publicationDate
     )
     {
@@ -42,13 +42,13 @@ public sealed class Solver
         return Solve(random);
     }
 
-    public (string? solution, IReadOnlyCollection<string> guesses, string? failureReason) Solve(
+    public (Word? solution, IReadOnlyCollection<Word> guesses, string? failureReason) Solve(
         Random random
     )
     {
         var remainingWords = _solutionWordList;
         var solution = Word.Empty;
-        var guesses = new List<string>(MaxAttempts);
+        var guesses = new List<Word>(MaxAttempts);
         var numAttempts = 0;
         var isDynamicFeedbackProvider = _feedbackProvider is DynamicFeedbackProvider;
 
@@ -57,10 +57,10 @@ public sealed class Solver
             var remainingAttempts = MaxAttempts - numAttempts++;
             var feedbackIndexesToProcess = new BitMask();
 
-            Word? guess = null;
+            Word? maybeGuess = null;
             if (remainingWords.Length == 1)
             {
-                guess = remainingWords[0];
+                maybeGuess = remainingWords[0];
             }
             else if ( // severe risk of exhaustion check
                 isDynamicFeedbackProvider
@@ -75,7 +75,7 @@ public sealed class Solver
                         BitMask.Empty, 
                         (current, word) => current.Set(word[unsolvedCharPosition]));
                 
-                guess = _guessWordList
+                maybeGuess = _guessWordList
                     .GroupBy(word =>
                         unsolvedCharMask.CountSetBitsWhere(c => 
                                 !solution.Contains(c) &&
@@ -85,11 +85,11 @@ public sealed class Solver
                     .MaxBy(g => g.Key)? // group matching most criteria
                     .RandomElement(random);
 
-                if (guess.HasValue)
+                if (maybeGuess.HasValue)
                 {
                     for (var i = 0; i < WordLength; i++)
                     {
-                        if (unsolvedCharMask.IsSet(guess.Value[i]))
+                        if (unsolvedCharMask.IsSet(maybeGuess.Value[i]))
                         {
                             feedbackIndexesToProcess = feedbackIndexesToProcess.Set(i);
                         }
@@ -98,27 +98,26 @@ public sealed class Solver
             }
 
             // Fallback to the original approach: guess the word that eliminates the most possibilities
-            guess ??= GetNextWords(solution, remainingWords).RandomElement(random);
-
-            var guessWord = guess.Value.ToString();
-            guesses.Add(guessWord!);
+            maybeGuess ??= GetNextWords(solution, remainingWords).RandomElement(random);
+            var guess = maybeGuess.Value;
+            guesses.Add(guess);
 
             _console.WriteLine(
-                $"Suggestion $magenta({numAttempts}): $green({guessWord!.ToUpper()}) - out of $magenta({"possibility".ToQuantity(remainingWords.Length)})"
+                $"Suggestion $magenta({numAttempts}): $green({guess}) - out of $magenta({"possibility".ToQuantity(remainingWords.Length)})"
             );
 
-            var feedback = _feedbackProvider.GetFeedback(guessWord, remainingWords.Length);
+            var feedback = _feedbackProvider.GetFeedback(guess, remainingWords.Length);
             if (feedback == null)
             {
                 return (null, guesses, "failed to acquire feedback for guess");
             }
             if (feedback == SolvedFeedback)
             {
-                return (guessWord, guesses, null);
+                return (guess, guesses, null);
             }
             
             var operations = feedback
-                .Zip(guess.Value)
+                .Zip(guess)
                 .Select((x, i) => (f: x.First, c: x.Second, i))
                 .Where(x => 
                     feedbackIndexesToProcess.IsEmpty
@@ -154,7 +153,7 @@ public sealed class Solver
                             break;
                         }
 
-                        for (var j = 0; j < WordLength && remainingWords.Length > 1; j++)
+                        for (var j = 0; j < WordLength && remainingWords.Length > 0; j++)
                         {
                             if (solution[j] == 0)
                             {
@@ -164,9 +163,9 @@ public sealed class Solver
                         break;
                 }
 
-                if (remainingWords.Length <= 1)
+                if (remainingWords.Length == 0)
                 {
-                    break; // no need to process further feedback as either solution now known or no solution exists
+                    break; // word missing from dictionary or potential bug
                 }
             }
 

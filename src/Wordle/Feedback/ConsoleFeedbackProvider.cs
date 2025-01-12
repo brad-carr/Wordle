@@ -5,7 +5,7 @@ namespace Wordle.Feedback;
 
 internal sealed class ConsoleFeedbackProvider(IConsole console) : IFeedbackProvider
 {
-    public string? GetFeedback(string guess, int remainingWordCount)
+    public string? GetFeedback(Word guess, int remainingWordCount)
     {
         if (remainingWordCount == 1)
         {
@@ -36,19 +36,17 @@ internal sealed class ConsoleFeedbackProvider(IConsole console) : IFeedbackProvi
                 .Select(PositionalChar.Create)
                 .FirstOrDefault(x => FeedbackOption.IsInvalid(x.Char));
 
-            if (invalidCharInfo.IsValid())
+            if (!invalidCharInfo.IsValid())
             {
-                console.WriteLine(
-                    $"Invalid feedback '$red({feedback})'; contains invalid char '$red({invalidCharInfo.Char})' at position {invalidCharInfo.Position + 1}. Use only letters $yellow(C), $yellow(M) or $yellow(N)."
-                );
-
-                var padding = new string(' ', invalidCharInfo.Position + 18);
-                console.WriteLine($"{padding}$red({Unicode.UpArrow})");
-
-                continue;
+                return feedback;
             }
+            
+            console.WriteLine(
+                $"Invalid feedback '$red({feedback})'; contains invalid char '$red({invalidCharInfo.Char})' at position {invalidCharInfo.Position + 1}. Use only letters $yellow(C), $yellow(M) or $yellow(N)."
+            );
 
-            return feedback;
+            var padding = new string(' ', invalidCharInfo.Position + 18);
+            console.WriteLine($"{padding}$red({Unicode.UpArrow})");
         }
     }
 

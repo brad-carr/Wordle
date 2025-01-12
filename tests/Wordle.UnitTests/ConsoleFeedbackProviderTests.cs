@@ -3,8 +3,8 @@
 using FluentAssertions;
 using Moq;
 using Wordle;
-using Wordle.Feedback;
-using Wordle.Interaction;
+using Feedback;
+using Interaction;
 
 public sealed class ConsoleFeedbackProviderTests
 {
@@ -16,7 +16,7 @@ public sealed class ConsoleFeedbackProviderTests
         var feedbackProvider = new ConsoleFeedbackProvider(consoleMock.Object);
 
         // Act
-        var actual = feedbackProvider.GetFeedback("comic", 1);
+        var actual = feedbackProvider.GetFeedback(Word.Create("comic"), 1);
 
         // Assert
         actual.Should().Be(Solver.SolvedFeedback);
@@ -40,7 +40,7 @@ public sealed class ConsoleFeedbackProviderTests
         var feedbackProvider = new ConsoleFeedbackProvider(consoleMock.Object);
 
         // Act
-        var actual = feedbackProvider.GetFeedback("comic", 10);
+        var actual = feedbackProvider.GetFeedback(Word.Create("comic"), 10);
 
         // Assert
         actual.Should().BeNull();
@@ -118,7 +118,7 @@ public sealed class ConsoleFeedbackProviderTests
         var feedbackProvider = new ConsoleFeedbackProvider(consoleMock.Object);
 
         // Act
-        var actual = feedbackProvider.GetFeedback("comic", 5);
+        var actual = feedbackProvider.GetFeedback(Word.Create("comic"), 5);
 
         // Assert
         actual.Should().Be(Solver.SolvedFeedback, reason);
