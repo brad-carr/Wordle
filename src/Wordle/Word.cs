@@ -6,6 +6,23 @@ namespace Wordle;
 [DebuggerDisplay("{ToString()} ({_bits})")]
 public readonly struct Word : IReadOnlyList<byte>, IEquatable<Word>
 {
+    private const byte CharCount = 26;
+    private const byte FirstChar = 1;
+    
+    public static IReadOnlyCollection<byte> Alphabet { get; } = GenerateAlphabet();
+
+    private static byte[] GenerateAlphabet()
+    {
+        var result = new byte[CharCount];
+        var next = FirstChar;
+        for (var i=0; i<CharCount; i++)
+        {
+            result[i] = next++;
+        }
+
+        return result;
+    }
+
     public static Word Empty { get; } = new(0UL);
 
     private readonly ulong _bits;
@@ -101,14 +118,14 @@ public readonly struct Word : IReadOnlyList<byte>, IEquatable<Word>
         return new Word((_bits & clearMask) | positionalChar);
     }
 
-    public new string ToString()
+    public override string ToString()
     {
         var result = "";
         var bits = _bits;
         for (var i = 0; i < Solver.WordLength; i++)
         {
             var b = (char)(bits & 31); 
-            result += b == 0 ? ' ' : (char)(b + 'a' -1);
+            result += b == 0 ? ' ' : (char)(b + 'A' -1);
             bits >>= 5;
         }
 

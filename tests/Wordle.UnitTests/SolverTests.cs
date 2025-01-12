@@ -83,11 +83,10 @@ public sealed class SolverTests
     {
         // Arrange
         var publicationDate = DateOnly.Parse(publicationDateLiteral);
-        var console = Mock.Of<IConsole>();
         var solution = Word.Create(solutionLiteral);
-        var feedbackProvider = new DynamicFeedbackProvider(solution);
-        var solver = new Solver(console, feedbackProvider, _fixture.SolutionWordList, _fixture.GuessWordList);
         var initialSeed = Solver.GetSeed(publicationDate);
+        var solver = _fixture.Solver;
+        _fixture.FeedbackProvider.Solution = solution;
         var currentSeed = initialSeed;
 
         Enumerable
@@ -198,8 +197,15 @@ public sealed class SolverFixture
     {
         SolutionWordList = WordListReader.EnumerateSolutionWords().ToArray();
         GuessWordList = WordListReader.EnumerateGuessWords().ToArray();
+        
+        var console = Mock.Of<IConsole>();
+        FeedbackProvider = new DynamicFeedbackProvider();
+        Solver = new Solver(console, FeedbackProvider, SolutionWordList, GuessWordList);
     }
 
+    public DynamicFeedbackProvider FeedbackProvider { get; }
+
+    public Solver Solver { get; }
     public string[] GuessWordList { get; }
     public string[] SolutionWordList { get; }
 }

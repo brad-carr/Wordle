@@ -1,7 +1,9 @@
 namespace Wordle.Feedback;
 
-public sealed class DynamicFeedbackProvider(Word Solution) : IFeedbackProvider
+public sealed class DynamicFeedbackProvider : IFeedbackProvider
 {
+    public Word Solution { get; set; }
+
     public string? GetFeedback(Word guess, int remainingWordCount)
     {
         if (guess == Word.Empty)
@@ -70,5 +72,14 @@ public sealed class DynamicFeedbackProvider(Word Solution) : IFeedbackProvider
                 sieve[c]--;
                 break;
         }
+    }
+
+    public DynamicFeedbackProvider() : this(new Word())
+    {
+    }
+
+    public DynamicFeedbackProvider(Word solution)
+    {
+        Solution = solution;
     }
 }

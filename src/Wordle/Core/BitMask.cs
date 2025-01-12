@@ -4,7 +4,7 @@ using System.Runtime.Intrinsics.X86;
 
 namespace Wordle.Core;
 
-public readonly struct BitMask : IReadOnlyCollection<int>
+public readonly struct BitMask : IReadOnlyCollection<byte>
 {
     public static BitMask Empty { get; }= new();
 
@@ -43,11 +43,11 @@ public readonly struct BitMask : IReadOnlyCollection<int>
         return count;
     }
     
-    public IEnumerator<int> GetEnumerator()
+    public IEnumerator<byte> GetEnumerator()
     {
         for (var x = _value; x != 0;)
         {
-            yield return (int)Bmi1.X64.TrailingZeroCount(x); 
+            yield return (byte)Bmi1.X64.TrailingZeroCount(x); 
             x = Bmi1.X64.ResetLowestSetBit(x);
         }
     }

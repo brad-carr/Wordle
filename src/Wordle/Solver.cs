@@ -12,23 +12,29 @@ public sealed class Solver
 
     internal static readonly string SolvedFeedback = new('c', WordLength);
 
-    private readonly IConsole _console;
+    private readonly Dictionary<byte, Word[]> _guessWordsBySingleOccurringLetter;
     private readonly IFeedbackProvider _feedbackProvider;
     private readonly Word[] _solutionWordList;
-    private readonly Word[] _guessWordList;
-    
+    private readonly IConsole _console;
+
     public Solver(
         IConsole console,
         IFeedbackProvider feedbackProvider,
         string[] solutionWordList,
         string[] guessWordList
-    ) =>
-        (_console, _feedbackProvider, _solutionWordList, _guessWordList) = (
+    )
+    {
+        var guessWords = guessWordList.Select(Word.Create).ToArray();
+        
+        (_console, _feedbackProvider, _solutionWordList, _guessWordsBySingleOccurringLetter) = (
             console,
             feedbackProvider,
             solutionWordList.Select(Word.Create).ToArray(),
-            guessWordList.Select(Word.Create).ToArray()
+            Word.Alphabet.ToDictionary(
+                c => c,
+                c => guessWords.Where(w => w.ContainsOnce(c, out _)).ToArray())
         );
+    }
 
     public Solver(IConsole console, IFeedbackProvider feedbackProvider)
         : this(console, feedbackProvider, WordListReader.EnumerateSolutionWords().ToArray(), WordListReader.EnumerateGuessWords().ToArray()) { }
@@ -69,19 +75,17 @@ public sealed class Solver
                 && solution.ContainsOnce(0, out var unsolvedCharPosition)
             )
             {
-                // Find a word that contains the most unsolved characters to maximize the number of words eliminated
+                // Find a word that contains the most unsolved characters to maximize the number of words possibly eliminated
                 var unsolvedCharMask = remainingWords
+                    .Where(word => !solution.Contains(word[unsolvedCharPosition]))
                     .Aggregate(
-                        BitMask.Empty, 
+                        BitMask.Empty,
                         (current, word) => current.Set(word[unsolvedCharPosition]));
                 
-                maybeGuess = _guessWordList
-                    .GroupBy(word =>
-                        unsolvedCharMask.CountSetBitsWhere(c => 
-                                !solution.Contains(c) &&
-                                word.ContainsOnce(c, out _) // favour characters with unique occurrences in the word to maximize elimination scope
-                        )
-                    )
+                maybeGuess = unsolvedCharMask
+                    .SelectMany(c => _guessWordsBySingleOccurringLetter[c])
+                    .Distinct()
+                    .GroupBy(word => unsolvedCharMask.CountSetBitsWhere(word.Contains))
                     .MaxBy(g => g.Key)? // group matching most criteria
                     .RandomElement(random);
 
