@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Diagnostics;
+using System.Text;
 
 namespace Wordle;
 
@@ -8,6 +9,10 @@ public readonly struct Word : IReadOnlyList<byte>, IEquatable<Word>
 {
     private const byte CharCount = 26;
     private const byte FirstChar = 1;
+    private const byte BitsPerChar = 5;
+    private const byte CharMask = 31;
+    private const ulong ULCharMask = CharMask;
+    private const char Space = ' ';
     
     public static IReadOnlyCollection<byte> Alphabet { get; } = GenerateAlphabet();
 
@@ -15,7 +20,7 @@ public readonly struct Word : IReadOnlyList<byte>, IEquatable<Word>
     {
         var result = new byte[CharCount];
         var next = FirstChar;
-        for (var i=0; i<CharCount; i++)
+        for (var i = 0; i < CharCount; i++)
         {
             result[i] = next++;
         }
@@ -42,11 +47,11 @@ public readonly struct Word : IReadOnlyList<byte>, IEquatable<Word>
             while (i-- > 0)
             {
                 var c = word[i];
-                bits <<= 5;
+                bits <<= BitsPerChar;
 
                 if (c != ' ')
                 {
-                    bits |= (byte)(c - 'a' + 1);
+                    bits |= c & ULCharMask; // case-insensitive
                 }
             }
         }
@@ -61,12 +66,12 @@ public readonly struct Word : IReadOnlyList<byte>, IEquatable<Word>
         {
             for (var i = 0; i < Solver.WordLength; i++)
             {
-                if ((byte)(bits & 31) == findChar)
+                if ((bits & ULCharMask) == findChar)
                 {
                     return true;
                 }
 
-                bits >>= 5;
+                bits >>= BitsPerChar;
             }
         }
 
@@ -82,7 +87,7 @@ public readonly struct Word : IReadOnlyList<byte>, IEquatable<Word>
         {
             for (var i = 0; i < Solver.WordLength; i++)
             {
-                if ((byte)(bits & 31) == findChar)
+                if ((bits & ULCharMask) == findChar)
                 {
                     if (foundPos >= 0)
                     {
@@ -92,7 +97,7 @@ public readonly struct Word : IReadOnlyList<byte>, IEquatable<Word>
                     foundPos = i;
                 }
 
-                bits >>= 5;
+                bits >>= BitsPerChar;
             }
         }
 
@@ -105,31 +110,30 @@ public readonly struct Word : IReadOnlyList<byte>, IEquatable<Word>
         {
             unchecked
             {
-                return (byte)((_bits >> pos * 5) & 31);    
+                return (byte)((_bits >> pos * BitsPerChar) & CharMask);    
             }
         }
     }
 
     public Word SetCharAtPos(byte charToSet, int pos)
     {
-        var shift = pos * 5;
+        var shift = pos * BitsPerChar;
         var positionalChar = (ulong)charToSet << shift;
-        var clearMask = ~(31UL << shift);
-        return new Word((_bits & clearMask) | positionalChar);
+        var clearMask = ~(ULCharMask << shift);
+        return new Word(_bits & clearMask | positionalChar);
     }
 
     public override string ToString()
     {
-        var result = "";
-        var bits = _bits;
-        for (var i = 0; i < Solver.WordLength; i++)
+        return string.Create(Solver.WordLength, _bits, (span, bits) =>
         {
-            var b = (char)(bits & 31); 
-            result += b == 0 ? ' ' : (char)(b + 'A' -1);
-            bits >>= 5;
-        }
-
-        return result;
+            for (var i = 0; i < Solver.WordLength; i++)
+            {
+                var b = bits & ULCharMask;
+                span[i] = b == 0 ? Space : (char)(b + FirstChar -1);
+                bits >>= BitsPerChar;
+            }
+        });
     }
 
     public IEnumerator<byte> GetEnumerator()
@@ -137,8 +141,8 @@ public readonly struct Word : IReadOnlyList<byte>, IEquatable<Word>
         var bits = _bits;
         for (var i = 0; i < Solver.WordLength; i++)
         {
-            yield return (byte)(bits & 31);
-            bits >>= 5;
+            yield return (byte)(bits & CharMask);
+            bits >>= BitsPerChar;
         }
     }
 
