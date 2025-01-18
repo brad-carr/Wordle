@@ -6,15 +6,18 @@ using Wordle;
 using Feedback;
 using Interaction;
 using Xunit;
+using Xunit.Abstractions;
 
 [Collection("SolverCollection")]
 public sealed class SolverTests
 {
     private readonly SolverFixture _fixture;
+    private readonly ITestOutputHelper _testHelper;
 
-    public SolverTests(SolverFixture fixture)
+    public SolverTests(SolverFixture fixture, ITestOutputHelper testHelper)
     {
         _fixture = fixture;
+        _testHelper = testHelper;
     }
 
     [Theory]
@@ -50,7 +53,7 @@ public sealed class SolverTests
             );
         guesses
             .Count.Should()
-            .BeLessOrEqualTo(Solver.MaxAttempts, $"guesses were {string.Join($" {Unicode.RightArrow} ", guesses)}");
+            .BeLessOrEqualTo(Solver.DefaultMaxAttempts, $"guesses were {string.Join($" {Unicode.RightArrow} ", guesses)}");
         failureReason.Should().BeNull();
     }
 
@@ -73,6 +76,44 @@ public sealed class SolverTests
     )
     {
         RunScenario(publicationDateLiteral, solution, 1);
+    }
+
+    [Fact]
+    public void Solve_DynamicFeedback_AllSolutionsTested()
+    {
+        Thread.CurrentThread.Priority = ThreadPriority.Highest;
+
+        const int seed = 1;
+        var solver = _fixture.Solver;
+        var (successCount, failCount) = (0, 0);
+        
+        _fixture
+            .SolutionWordList
+            .Select(literal =>
+            {
+                var solution =  Word.Create(literal);
+                var random = new Random(seed);
+                _fixture.FeedbackProvider.Solution = solution;
+                return (solution, result: solver.Solve(random, 1000));
+            })
+            .OrderBy(x => x.result.guesses.Count)
+            .ToList()
+            .ForEach(x =>
+            {
+                var delimited = string.Join(", ", x.result.guesses.Select(g => $"'{g.ToString()}'"));
+                if (x.result.solution == null)
+                {
+                    failCount++;
+                    _testHelper.WriteLine($"Failure for '{x.solution.ToString()}'; guesses: {delimited}; reason: {x.result.failureReason}");
+                }
+                else
+                {
+                    successCount++;
+                    _testHelper.WriteLine($"Solved '{x.solution.ToString()}' in {x.result.guesses.Count} attempts ; guesses: {delimited}");
+                }
+            });
+        
+        _testHelper.WriteLine($"Completed. success: {successCount}; fail: {failCount}");
     }
 
     private void RunScenario(
@@ -110,7 +151,7 @@ public sealed class SolverTests
                 guesses
                     .Count.Should()
                     .BeLessOrEqualTo(
-                        Solver.MaxAttempts,
+                        Solver.DefaultMaxAttempts,
                         $"seed was {currentSeed}, guesses were {string.Join($" {Unicode.RightArrow} ", guesses)}, failure reason was {failureReason}"
                     );
                 failureReason.Should().BeNull();
@@ -138,7 +179,7 @@ public sealed class SolverTests
         // Assert
         solution.Should().BeNull();
         guesses.Count.Should().BeGreaterThan(0);
-        guesses.Count.Should().BeLessOrEqualTo(Solver.MaxAttempts);
+        guesses.Count.Should().BeLessOrEqualTo(Solver.DefaultMaxAttempts);
         feedbackProviderMock.VerifyAll();
         failureReason.Should().Be("algorithm failure, no remaining words available");
     }
@@ -187,6 +228,10 @@ public sealed class SolverTests
         { "2025-01-12", "total" },
         { "2025-01-13", "cloak" },
         { "2025-01-14", "fancy" },
+        { "2025-01-15", "knack" },
+        { "2025-01-16", "flint" },
+        { "2025-01-17", "prose" },
+        { "2025-01-18", "silly" },
     };
 }
 

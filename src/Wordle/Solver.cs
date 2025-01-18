@@ -8,7 +8,7 @@ namespace Wordle;
 public sealed class Solver
 {
     public const int WordLength = 5;
-    public const int MaxAttempts = 6;
+    public const int DefaultMaxAttempts = 6;
 
     internal static readonly string SolvedFeedback = new('c', WordLength);
 
@@ -40,27 +40,29 @@ public sealed class Solver
         : this(console, feedbackProvider, WordListReader.EnumerateSolutionWords().ToArray(), WordListReader.EnumerateGuessWords().ToArray()) { }
 
     public (Word? solution, IReadOnlyCollection<Word> guesses, string? reason) Solve(
-        DateOnly publicationDate
+        DateOnly publicationDate, 
+        int maxAttempts = DefaultMaxAttempts
     )
     {
         var seed = GetSeed(publicationDate);
         var random = new Random(seed);
-        return Solve(random);
+        return Solve(random, maxAttempts);
     }
 
     public (Word? solution, IReadOnlyCollection<Word> guesses, string? failureReason) Solve(
-        Random random
+        Random random, 
+        int maxAttempts = DefaultMaxAttempts
     )
     {
         var remainingWords = _solutionWordList;
         var solution = Word.Empty;
-        var guesses = new List<Word>(MaxAttempts);
+        var guesses = new List<Word>(maxAttempts);
         var numAttempts = 0;
         var isDynamicFeedbackProvider = _feedbackProvider is DynamicFeedbackProvider;
 
-        while (numAttempts < MaxAttempts)
+        while (numAttempts < maxAttempts)
         {
-            var remainingAttempts = MaxAttempts - numAttempts++;
+            var remainingAttempts = maxAttempts - numAttempts++;
             var feedbackIndexesToProcess = new BitMask();
 
             Word? maybeGuess = null;

@@ -1,6 +1,5 @@
 using System.Collections;
 using System.Diagnostics;
-using System.Text;
 
 namespace Wordle;
 
@@ -130,7 +129,7 @@ public readonly struct Word : IReadOnlyList<byte>, IEquatable<Word>
             for (var i = 0; i < Solver.WordLength; i++)
             {
                 var b = bits & ULCharMask;
-                span[i] = b == 0 ? Space : (char)(b + FirstChar -1);
+                span[i] = b == 0 ? Space : (char)(b + 'a' -1);
                 bits >>= BitsPerChar;
             }
         });
