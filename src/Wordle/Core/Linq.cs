@@ -1,20 +1,14 @@
-namespace Wordle;
+namespace Wordle.Core;
 
 internal static class Linq
 {
     /// <summary>Chooses a random element from an array.</summary>
-    public static T? RandomElement<T>(this T[] items, Random rand)
+    public static T? RandomElement<T>(this T[] items, Random rand) => items.Length switch
     {
-        unchecked
-        {
-            return items.Length switch
-            {
-                0 => default,
-                1 => items[0],
-                _ => items[rand.Next(items.Length)],
-            };
-        }
-    }
+        0 => default,
+        1 => items[0],
+        _ => items[rand.Next(items.Length)],
+    };
 
     /// <summary>Chooses a random element from a sequence, using only a single pass of the sequence.</summary>
     /// <remarks>Uses the Fisher-Yates reservoir sampling algorithm.</remarks>
@@ -38,7 +32,7 @@ internal static class Linq
         where T : IEquatable<T>
     {
         index = -1;
-        int i = 0;
+        var i = 0;
         foreach (var item in items)
         {
             if (item.Equals(comparand))

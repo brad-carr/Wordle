@@ -1,4 +1,6 @@
-﻿namespace Wordle.UnitTests;
+﻿using Wordle.Core;
+
+namespace Wordle.UnitTests;
 
 using FluentAssertions;
 using Wordle;

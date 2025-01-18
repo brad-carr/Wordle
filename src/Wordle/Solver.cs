@@ -220,7 +220,7 @@ public sealed class Solver
         }
     }
 
-    private static IList<Word> GetNextWords(Word solution, IList<Word> remainingWords)
+    private static Word[] GetNextWords(Word solution, Word[] remainingWords)
     {
         var remainingIndexes = new BitMask();
         for (var i = 0; i < WordLength; i++)
@@ -231,7 +231,7 @@ public sealed class Solver
             }
         }
 
-        while (remainingIndexes.HasSetBits && remainingWords.Count > 1)
+        while (remainingIndexes.HasSetBits && remainingWords.Length > 1)
         {
             var next = remainingIndexes
                 .Select(i => // find words matching the most commonly occurring character in remainingWords at position i
