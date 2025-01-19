@@ -10,7 +10,7 @@ public readonly struct Word : IReadOnlyList<byte>, IEquatable<Word>
     private const byte FirstChar = 1;
     private const byte BitsPerChar = 5;
     private const byte CharMask = 31;
-    private const ulong ULCharMask = CharMask;
+    private const uint ULCharMask = CharMask;
     private const char Space = ' ';
     
     public static IReadOnlyCollection<byte> Alphabet { get; } = GenerateAlphabet();
@@ -27,11 +27,11 @@ public readonly struct Word : IReadOnlyList<byte>, IEquatable<Word>
         return result;
     }
 
-    public static Word Empty { get; } = new(0UL);
+    public static Word Empty { get; } = new(0U);
 
-    private readonly ulong _bits;
+    private readonly uint _bits;
 
-    private Word(ulong bits) => _bits = bits;
+    private Word(uint bits) => _bits = bits;
 
     public int Count => Solver.WordLength;
 
@@ -39,7 +39,7 @@ public readonly struct Word : IReadOnlyList<byte>, IEquatable<Word>
 
     public static Word Create(string word)
     {
-        var bits = 0UL;
+        var bits = 0U;
         var i = Solver.WordLength;
         unchecked
         {
@@ -117,7 +117,7 @@ public readonly struct Word : IReadOnlyList<byte>, IEquatable<Word>
     public Word SetCharAtPos(byte charToSet, int pos)
     {
         var shift = pos * BitsPerChar;
-        var positionalChar = (ulong)charToSet << shift;
+        var positionalChar = (uint)charToSet << shift;
         var clearMask = ~(ULCharMask << shift);
         return new Word(_bits & clearMask | positionalChar);
     }

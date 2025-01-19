@@ -8,13 +8,13 @@ public readonly struct BitMask : IReadOnlyCollection<byte>
 {
     public static BitMask Empty { get; } = new();
 
-    private readonly ulong _value;
+    private readonly uint _value;
 
     public BitMask()
     {
     }
 
-    private BitMask(ulong value) => _value = value;
+    private BitMask(uint value) => _value = value;
 
     public bool IsEmpty => _value == 0;
 
@@ -22,11 +22,11 @@ public readonly struct BitMask : IReadOnlyCollection<byte>
 
     public bool HasSetBits => _value != 0;
 
-    public BitMask Set(int index) => new(_value | (1UL << index));
+    public BitMask Set(int index) => new(_value | (1U << index));
 
-    public BitMask Clear(int index) => new(~(1UL << index) & _value); // Bmi1.X64.AndNot
+    public BitMask Clear(int index) => new(~(1U << index) & _value); // Bmi1.X64.AndNot
 
-    public bool IsSet(int index) => ((1UL << index) & _value) > 0;
+    public bool IsSet(int index) => ((1U << index) & _value) > 0;
 
     public int CountSetBitsWhere(Predicate<byte> criteria)
     {
@@ -56,6 +56,6 @@ public readonly struct BitMask : IReadOnlyCollection<byte>
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static ulong ResetLowestSetBit(ulong x) =>
-        x & (x - 1UL); // Bmi1.X64.ResetLowestSetBit - leverages wraparound if x==0
+    private static uint ResetLowestSetBit(uint x) =>
+        x & (x - 1U); // Bmi1.X64.ResetLowestSetBit - leverages wraparound if x==0
 }
