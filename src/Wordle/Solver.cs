@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using Humanizer;
 using Wordle.Core;
 using Wordle.Feedback;
@@ -59,12 +58,11 @@ public sealed class Solver
         var solution = Word.Empty;
         var guesses = new List<Word>(maxAttempts);
         var numAttempts = 0;
-        var isDynamicFeedbackProvider = _feedbackProvider is DynamicFeedbackProvider;
 
         while (numAttempts < maxAttempts)
         {
             var remainingAttempts = maxAttempts - numAttempts++;
-            var (guess, feedbackIndexesToProcess) = Guess(random, remainingWords, isDynamicFeedbackProvider, remainingAttempts, solution);
+            var guess = Guess(random, remainingWords, remainingAttempts, solution);
             guesses.Add(guess);
 
             _console.WriteLine(
@@ -81,15 +79,9 @@ public sealed class Solver
                 return (guess, guesses, null);
             }
 
-            var solutionCopy = solution; 
             var operations = feedback
                 .Zip(guess)
                 .Select((x, i) => (f: x.First, c: x.Second, i))
-                .Where(x =>
-                    feedbackIndexesToProcess.IsEmpty
-                        ? solutionCopy[x.i] != x.c // skip already solved positional indexes
-                        : feedbackIndexesToProcess.IsSet(x.i) // process only specific indexes 
-                )
                 .OrderBy(x => x.f); // ensures processing order 'c' -> 'm' -> 'n'
 
             var misplacedCharIndexes = new BitMask();
@@ -98,17 +90,17 @@ public sealed class Solver
                 switch (f)
                 {
                     case FeedbackOption.Correct:
-                        solution = solution.SetCharAtPos(c, i);
-                        remainingWords = remainingWords.Where(w => w[i] == c).ToArray();
+                        if (solution[i] == 0)
+                        {
+                            solution = solution.SetCharAtPos(c, i);
+                            remainingWords = remainingWords.Where(w => w[i] == c).ToArray();
+                        }
                         break;
+
                     case FeedbackOption.Misplaced:
                         misplacedCharIndexes = misplacedCharIndexes.Set(c - 'a');
-                        var unsolvedIndexes = Enumerable
-                            .Range(0, WordLength)
-                            .Where(j => j != i && solution[j] == 0)
-                            .ToArray();
                         remainingWords = remainingWords
-                            .Where(w => w[i] != c && unsolvedIndexes.Any(u => w[u] == c))
+                            .Where(w => w[i] != c && w.Contains(c))
                             .ToArray();
                         break;
                     case FeedbackOption.NoMoreOccurrences:
@@ -150,20 +142,16 @@ public sealed class Solver
         return (null, guesses, "maximum attempts reached without solution");
     }
 
-    [return: NotNull]
-    private (Word, BitMask) Guess(Random random, Word[] remainingWords, bool isDynamicFeedbackProvider, int remainingAttempts,
-        Word solution)
+    private Word Guess(Random random, Word[] remainingWords, int remainingAttempts, Word solution)
     {
-        Word? maybeGuess = null;
         if (remainingWords.Length == 1)
         {
-            return (remainingWords[0], BitMask.Empty);
+            return remainingWords[0];
         }
         
-        var feedbackIndexesToProcess = new BitMask();
+        Word? maybeGuess = null;
         if ( // severe risk of exhaustion check
-            isDynamicFeedbackProvider
-            && remainingAttempts > 1 // this technique requires at least 2 attempts to work
+            remainingAttempts > 1 // this technique requires at least 2 attempts to work
             && solution.ContainsOnce(0, out var unsolvedCharPosition)
             && remainingWords.Length > 2) // inefficient to try one letter at a time if more than two possibilities
         {
@@ -180,22 +168,11 @@ public sealed class Solver
                 .GroupBy(word => unsolvedCharMask.CountSetBitsWhere(word.Contains))
                 .MaxBy(g => g.Key)? // group matching most criteria
                 .RandomElement(random);
-
-            if (maybeGuess.HasValue)
-            {
-                for (var i = 0; i < WordLength; i++)
-                {
-                    if (unsolvedCharMask.IsSet(maybeGuess.Value[i]))
-                    {
-                        feedbackIndexesToProcess = feedbackIndexesToProcess.Set(i);
-                    }
-                }
-            }
         }
 
         // Fallback to the original approach: guess the word that eliminates the most possibilities
         var guess = maybeGuess ?? GetNextWords(solution, remainingWords).RandomElement(random);
-        return (guess, feedbackIndexesToProcess);
+        return guess;
     }
 
     private static void AddCommonPositionalCharsToSolution(Word[] remainingWords, ref Word solution)
