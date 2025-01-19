@@ -45,13 +45,13 @@ public sealed class SolverTests
 
         // Act
         var (solverSolution, guesses, failureReason) = solver.Solve(random);
-
+        
         // Assert
-        solverSolution
+        solverSolution.ToString()
             .Should()
             .Be(
-                solution,
-                $"guesses were {string.Join($" {Unicode.RightArrow} ", guesses)} and failure reason was {failureReason}"
+                solution.ToString(),
+                $"guesses were {string.Join($" {Unicode.RightArrow} ", guesses.Select(guess => $"'{guess.ToString()}'"))} with failure reason: {failureReason}"
             );
         guesses
             .Count.Should()

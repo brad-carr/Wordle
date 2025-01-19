@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Humanizer;
 using Wordle.Core;
 using Wordle.Feedback;
@@ -63,48 +64,7 @@ public sealed class Solver
         while (numAttempts < maxAttempts)
         {
             var remainingAttempts = maxAttempts - numAttempts++;
-            var feedbackIndexesToProcess = new BitMask();
-
-            Word? maybeGuess = null;
-            if (remainingWords.Length == 1)
-            {
-                maybeGuess = remainingWords[0];
-            }
-            else if ( // severe risk of exhaustion check
-                isDynamicFeedbackProvider
-                && remainingAttempts > 1 // this technique requires at least 2 attempts to work
-                && solution.ContainsOnce(0, out var unsolvedCharPosition)
-                && remainingWords.Length > 2) // inefficient to try one letter at a time if more than two possibilities
-            {
-                // Find a word that contains the most unsolved characters to maximize the number of words possibly eliminated
-                var unsolvedCharMask = remainingWords
-                    .Where(word => !solution.Contains(word[unsolvedCharPosition]))
-                    .Aggregate(
-                        BitMask.Empty,
-                        (current, word) => current.Set(word[unsolvedCharPosition]));
-                
-                maybeGuess = unsolvedCharMask
-                    .SelectMany(c => _guessWordsBySingleOccurringLetter[c])
-                    .Distinct()
-                    .GroupBy(word => unsolvedCharMask.CountSetBitsWhere(word.Contains))
-                    .MaxBy(g => g.Key)? // group matching most criteria
-                    .RandomElement(random);
-
-                if (maybeGuess.HasValue)
-                {
-                    for (var i = 0; i < WordLength; i++)
-                    {
-                        if (unsolvedCharMask.IsSet(maybeGuess.Value[i]))
-                        {
-                            feedbackIndexesToProcess = feedbackIndexesToProcess.Set(i);
-                        }
-                    }
-                }
-            }
-
-            // Fallback to the original approach: guess the word that eliminates the most possibilities
-            maybeGuess ??= GetNextWords(solution, remainingWords).RandomElement(random);
-            var guess = maybeGuess.Value;
+            var (guess, feedbackIndexesToProcess) = Guess(random, remainingWords, isDynamicFeedbackProvider, remainingAttempts, solution);
             guesses.Add(guess);
 
             _console.WriteLine(
@@ -125,7 +85,7 @@ public sealed class Solver
             var operations = feedback
                 .Zip(guess)
                 .Select((x, i) => (f: x.First, c: x.Second, i))
-                .Where(x => 
+                .Where(x =>
                     feedbackIndexesToProcess.IsEmpty
                         ? solutionCopy[x.i] != x.c // skip already solved positional indexes
                         : feedbackIndexesToProcess.IsSet(x.i) // process only specific indexes 
@@ -188,6 +148,54 @@ public sealed class Solver
         }
 
         return (null, guesses, "maximum attempts reached without solution");
+    }
+
+    [return: NotNull]
+    private (Word, BitMask) Guess(Random random, Word[] remainingWords, bool isDynamicFeedbackProvider, int remainingAttempts,
+        Word solution)
+    {
+        Word? maybeGuess = null;
+        if (remainingWords.Length == 1)
+        {
+            return (remainingWords[0], BitMask.Empty);
+        }
+        
+        var feedbackIndexesToProcess = new BitMask();
+        if ( // severe risk of exhaustion check
+            isDynamicFeedbackProvider
+            && remainingAttempts > 1 // this technique requires at least 2 attempts to work
+            && solution.ContainsOnce(0, out var unsolvedCharPosition)
+            && remainingWords.Length > 2) // inefficient to try one letter at a time if more than two possibilities
+        {
+            // Find a word that contains the most unsolved characters to maximize the number of words possibly eliminated
+            var unsolvedCharMask = remainingWords
+                .Where(word => !solution.Contains(word[unsolvedCharPosition]))
+                .Aggregate(
+                    BitMask.Empty,
+                    (current, word) => current.Set(word[unsolvedCharPosition]));
+                
+            maybeGuess = unsolvedCharMask
+                .SelectMany(c => _guessWordsBySingleOccurringLetter[c])
+                .Distinct()
+                .GroupBy(word => unsolvedCharMask.CountSetBitsWhere(word.Contains))
+                .MaxBy(g => g.Key)? // group matching most criteria
+                .RandomElement(random);
+
+            if (maybeGuess.HasValue)
+            {
+                for (var i = 0; i < WordLength; i++)
+                {
+                    if (unsolvedCharMask.IsSet(maybeGuess.Value[i]))
+                    {
+                        feedbackIndexesToProcess = feedbackIndexesToProcess.Set(i);
+                    }
+                }
+            }
+        }
+
+        // Fallback to the original approach: guess the word that eliminates the most possibilities
+        var guess = maybeGuess ?? GetNextWords(solution, remainingWords).RandomElement(random);
+        return (guess, feedbackIndexesToProcess);
     }
 
     private static void AddCommonPositionalCharsToSolution(Word[] remainingWords, ref Word solution)
