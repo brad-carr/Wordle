@@ -1,8 +1,17 @@
-using System.Net;
 using Wordle.Interaction;
 
 namespace Wordle.Feedback;
 
+/// <summary>
+/// Use this class to provide feedback for guesses obtained from <see cref="IGuesser.Guess"/> using the console.
+/// </summary>
+/// <param name="console">The console to use for Q & A.</param>
+/// <remarks>
+/// Spoiler alert: This class can be used to cheat at Wordle!
+/// This class can be used to provide feedback from Wordle after supplying the program's guesses.
+/// Note this program is not guaranteed to solve all possible games though has been known to
+/// outperform the author on many occasions!
+/// </remarks>
 internal sealed class ConsoleFeedbackProvider(IConsole console) : IFeedbackProvider
 {
     public string? GetFeedback(Word guess, int remainingWordCount)
