@@ -5,7 +5,8 @@ using Wordle.Interaction;
 
 var console = new RicherConsole(new ConsoleWrapper());
 var feedbackProvider = new ConsoleFeedbackProvider(console);
-var solver = new Solver(console, feedbackProvider);
+var guesser = new Guesser();
+var solver = new Solver(console, guesser, feedbackProvider);
 var (solution, guesses, failureReason) = 
     solver.Solve(DateOnly.FromDateTime(DateTime.Today));
 

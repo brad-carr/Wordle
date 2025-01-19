@@ -12,32 +12,28 @@ public sealed class Solver
 
     internal static readonly string SolvedFeedback = new('c', WordLength);
 
-    private readonly Dictionary<byte, Word[]> _guessWordsBySingleOccurringLetter;
     private readonly IFeedbackProvider _feedbackProvider;
     private readonly Word[] _solutionWordList;
     private readonly IConsole _console;
-
+    private readonly IGuesser _guesser;
+    
     public Solver(
         IConsole console,
+        IGuesser guesser,
         IFeedbackProvider feedbackProvider,
-        string[] solutionWordList,
-        string[] guessWordList
+        string[] solutionWordList
     )
     {
-        var guessWords = guessWordList.Select(Word.Create).ToArray();
-        
-        (_console, _feedbackProvider, _solutionWordList, _guessWordsBySingleOccurringLetter) = (
+        (_console, _guesser, _feedbackProvider, _solutionWordList) = (
             console,
+            guesser,
             feedbackProvider,
-            solutionWordList.Select(Word.Create).ToArray(),
-            Word.Alphabet.ToDictionary(
-                c => c,
-                c => guessWords.Where(w => w.ContainsOnce(c, out _)).ToArray())
+            solutionWordList.Select(Word.Create).ToArray()
         );
     }
 
-    public Solver(IConsole console, IFeedbackProvider feedbackProvider)
-        : this(console, feedbackProvider, WordListReader.EnumerateSolutionWords().ToArray(), WordListReader.EnumerateGuessWords().ToArray()) { }
+    public Solver(IConsole console, IGuesser guesser, IFeedbackProvider feedbackProvider)
+        : this(console, guesser, feedbackProvider, WordListReader.EnumerateSolutionWords().ToArray()) { }
 
     public (Word? solution, IReadOnlyCollection<Word> guesses, string? reason) Solve(
         DateOnly publicationDate, 
@@ -62,7 +58,7 @@ public sealed class Solver
         while (numAttempts < maxAttempts)
         {
             var remainingAttempts = maxAttempts - numAttempts++;
-            var guess = Guess(random, remainingWords, remainingAttempts, solution);
+            var guess = _guesser.Guess(random, solution, remainingWords, remainingAttempts);
             guesses.Add(guess);
 
             _console.WriteLine(
@@ -142,39 +138,6 @@ public sealed class Solver
         return (null, guesses, "maximum attempts reached without solution");
     }
 
-    private Word Guess(Random random, Word[] remainingWords, int remainingAttempts, Word solution)
-    {
-        if (remainingWords.Length == 1)
-        {
-            return remainingWords[0];
-        }
-        
-        Word? maybeGuess = null;
-        if ( // severe risk of exhaustion check
-            remainingAttempts > 1 // this technique requires at least 2 attempts to work
-            && solution.ContainsOnce(0, out var unsolvedCharPosition)
-            && remainingWords.Length > 2) // inefficient to try one letter at a time if more than two possibilities
-        {
-            // Find a word that contains the most unsolved characters to maximize the number of words possibly eliminated
-            var unsolvedCharMask = remainingWords
-                .Where(word => !solution.Contains(word[unsolvedCharPosition]))
-                .Aggregate(
-                    BitMask.Empty,
-                    (current, word) => current.Set(word[unsolvedCharPosition]));
-                
-            maybeGuess = unsolvedCharMask
-                .SelectMany(c => _guessWordsBySingleOccurringLetter[c])
-                .Distinct()
-                .GroupBy(word => unsolvedCharMask.CountSetBitsWhere(word.Contains))
-                .MaxBy(g => g.Key)? // group matching most criteria
-                .RandomElement(random);
-        }
-
-        // Fallback to the original approach: guess the word that eliminates the most possibilities
-        var guess = maybeGuess ?? GetNextWords(solution, remainingWords).RandomElement(random);
-        return guess;
-    }
-
     private static void AddCommonPositionalCharsToSolution(Word[] remainingWords, ref Word solution)
     {
         unchecked
@@ -203,37 +166,6 @@ public sealed class Solver
                 }
             }
         }
-    }
-
-    private static Word[] GetNextWords(Word solution, Word[] remainingWords)
-    {
-        var remainingIndexes = new BitMask();
-        for (var i = 0; i < WordLength; i++)
-        {
-            if (solution[i] == 0)
-            {
-                remainingIndexes = remainingIndexes.Set(i);
-            }
-        }
-
-        while (remainingIndexes.HasSetBits && remainingWords.Length > 1)
-        {
-            var next = remainingIndexes
-                .Select(i => // find words matching the most commonly occurring character in remainingWords at position i
-                    (
-                        i,
-                        matches: remainingWords
-                            .GroupBy(w => w[i], (_, words) => words.ToArray())
-                            .MaxBy(words => words.Length)!
-                    )
-                )
-                .MaxBy(y => y.matches.Length); // find the most common character across all positions
-
-            remainingWords = next.matches;
-            remainingIndexes = remainingIndexes.Clear(next.i); // mark position as visited and repeat
-        }
-
-        return remainingWords;
     }
 
     internal static int GetSeed(DateOnly publicationDate) =>

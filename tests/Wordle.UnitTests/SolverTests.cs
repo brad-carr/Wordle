@@ -40,7 +40,8 @@ public sealed class SolverTests
         var console = Mock.Of<IConsole>();
         var solution = Word.Create(solutionLiteral);
         var feedbackProvider = new DynamicFeedbackProvider(solution);
-        var solver = new Solver(console, feedbackProvider);
+        var guesser = _fixture.Guesser;
+        var solver = new Solver(console, guesser, feedbackProvider);
         var random = new Random(problematicSeed);
 
         // Act
@@ -177,7 +178,7 @@ public sealed class SolverTests
             .Setup(mock => mock.GetFeedback(It.IsAny<Word>(), It.IsAny<int>()))
             .Returns("nnnnn");
 
-        var solver = new Solver(console, feedbackProviderMock.Object);
+        var solver = new Solver(console, _fixture.Guesser, feedbackProviderMock.Object);
 
         // Act
         var (solution, guesses, failureReason) = solver.Solve(publicationDate);
@@ -202,7 +203,7 @@ public sealed class SolverTests
             .Setup(mock => mock.GetFeedback(It.IsAny<Word>(), It.IsAny<int>()))
             .Returns((string)null!);
 
-        var solver = new Solver(console, feedbackProviderMock.Object);
+        var solver = new Solver(console, _fixture.Guesser, feedbackProviderMock.Object);
 
         // Act
         var (solution, guesses, failureReason) = solver.Solve(publicationDate);
@@ -249,16 +250,16 @@ public sealed class SolverFixture
     public SolverFixture()
     {
         SolutionWordList = WordListReader.EnumerateSolutionWords().ToArray();
-        GuessWordList = WordListReader.EnumerateGuessWords().ToArray();
-        
         var console = Mock.Of<IConsole>();
         FeedbackProvider = new DynamicFeedbackProvider();
-        Solver = new Solver(console, FeedbackProvider, SolutionWordList, GuessWordList);
+        Guesser = new Guesser();
+        Solver = new Solver(console, Guesser, FeedbackProvider, SolutionWordList);
     }
+
+    public Guesser Guesser { get; }
 
     public DynamicFeedbackProvider FeedbackProvider { get; }
 
     public Solver Solver { get; }
-    public string[] GuessWordList { get; }
     public string[] SolutionWordList { get; }
 }
