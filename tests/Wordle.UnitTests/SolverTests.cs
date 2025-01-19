@@ -1,6 +1,7 @@
 ﻿namespace Wordle.UnitTests;
 
 using FluentAssertions;
+using Humanizer;
 using Moq;
 using Wordle;
 using Feedback;
@@ -29,6 +30,7 @@ public sealed class SolverTests
     [InlineData(20250237, "nerve")] // fixed in commit 386c6c442ba2f515b08c769c53d6c253ba1c0b37
     [InlineData(20241916, "lemur")] // fixed in commit 6e3740e631d36a23d2daa6e6865dbdb3adf3b4e3
     [InlineData(20241413, "grain")] // fixed in commit 6e3740e631d36a23d2daa6e6865dbdb3adf3b4e3
+    [InlineData(1, "wight")]
     public void Solve_DynamicFeedback_ProblematicSeeds_ShouldFindSolutionWithinSixAttempts(
         int problematicSeed,
         string solutionLiteral
@@ -55,6 +57,7 @@ public sealed class SolverTests
             .Count.Should()
             .BeLessOrEqualTo(Solver.DefaultMaxAttempts, $"guesses were {string.Join($" {Unicode.RightArrow} ", guesses)}");
         failureReason.Should().BeNull();
+        _testHelper.WriteLine($"Solved '{solution.ToString()}' in {guesses.Count} attempts. Guesses: {string.Join($" {Unicode.RightArrow} ", guesses)}");
     }
 
     [Theory(Skip = "Use this test to find problematic seeds for which the solver fails")]
@@ -101,10 +104,13 @@ public sealed class SolverTests
             .ForEach(x =>
             {
                 var delimited = string.Join(", ", x.result.guesses.Select(g => $"'{g.ToString()}'"));
-                if (x.result.solution == null)
+                x.result.solution.Should().NotBeNull(
+                    $"expected solution for '{x.solution.ToString()}' but failed after {"guess".ToQuantity(x.result.guesses.Count)}: {delimited} with reason: {x.result.failureReason}");
+                
+                if (x.result.guesses.Count > Solver.DefaultMaxAttempts)
                 {
                     failCount++;
-                    _testHelper.WriteLine($"Failure for '{x.solution.ToString()}'; guesses: {delimited}; reason: {x.result.failureReason}");
+                    _testHelper.WriteLine($"Failed for '{x.solution.ToString()}' after {"guess".ToQuantity(x.result.guesses.Count)}: {delimited}");
                 }
                 else
                 {

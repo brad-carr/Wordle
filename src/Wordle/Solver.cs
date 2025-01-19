@@ -73,9 +73,8 @@ public sealed class Solver
             else if ( // severe risk of exhaustion check
                 isDynamicFeedbackProvider
                 && remainingAttempts > 1 // this technique requires at least 2 attempts to work
-                && remainingWords.Length > remainingAttempts // exhaustion of attempts possible
                 && solution.ContainsOnce(0, out var unsolvedCharPosition)
-            )
+                && remainingWords.Length > 2) // inefficient to try one letter at a time if more than two possibilities
             {
                 // Find a word that contains the most unsolved characters to maximize the number of words possibly eliminated
                 var unsolvedCharMask = remainingWords
@@ -121,13 +120,14 @@ public sealed class Solver
             {
                 return (guess, guesses, null);
             }
-            
+
+            var solutionCopy = solution; 
             var operations = feedback
                 .Zip(guess)
                 .Select((x, i) => (f: x.First, c: x.Second, i))
                 .Where(x => 
                     feedbackIndexesToProcess.IsEmpty
-                        ? solution[x.i] != x.c // skip already solved positional indexes
+                        ? solutionCopy[x.i] != x.c // skip already solved positional indexes
                         : feedbackIndexesToProcess.IsSet(x.i) // process only specific indexes 
                 )
                 .OrderBy(x => x.f); // ensures processing order 'c' -> 'm' -> 'n'
