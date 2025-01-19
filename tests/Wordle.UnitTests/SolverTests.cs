@@ -31,6 +31,8 @@ public sealed class SolverTests
     [InlineData(20241916, "lemur")] // fixed in commit 6e3740e631d36a23d2daa6e6865dbdb3adf3b4e3
     [InlineData(20241413, "grain")] // fixed in commit 6e3740e631d36a23d2daa6e6865dbdb3adf3b4e3
     [InlineData(1, "wight")]
+    [InlineData(1, "bacon")]
+    [InlineData(1, "store")]
     public void Solve_DynamicFeedback_ProblematicSeeds_ShouldFindSolutionWithinSixAttempts(
         int problematicSeed,
         string solutionLiteral
@@ -90,6 +92,7 @@ public sealed class SolverTests
         const int seed = 1;
         var solver = _fixture.Solver;
         var (successCount, failCount) = (0, 0);
+        var totalGuesses = 0;
         
         _fixture
             .SolutionWordList
@@ -107,7 +110,8 @@ public sealed class SolverTests
                 var delimited = string.Join(", ", x.result.guesses.Select(g => $"'{g.ToString()}'"));
                 x.result.solution.Should().NotBeNull(
                     $"expected solution for '{x.solution.ToString()}' but failed after {"guess".ToQuantity(x.result.guesses.Count)}: {delimited} with reason: {x.result.failureReason}");
-                
+
+                totalGuesses += x.result.guesses.Count;
                 if (x.result.guesses.Count > Solver.DefaultMaxAttempts)
                 {
                     failCount++;
@@ -120,7 +124,10 @@ public sealed class SolverTests
                 }
             });
         
-        _testHelper.WriteLine($"Completed. success: {successCount}; fail: {failCount}");
+        _testHelper.WriteLine($"Completed with success: {successCount}; fail: {failCount}; total_guesses: {totalGuesses}");
+
+        failCount.Should().BeLessOrEqualTo(9, "this is the benchmark set by the best run");
+        totalGuesses.Should().BeLessOrEqualTo(8902, "this is the benchmark set by the best run");
     }
 
     private void RunScenario(

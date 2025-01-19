@@ -94,16 +94,19 @@ public sealed class Solver
                         break;
 
                     case FeedbackOption.Misplaced:
-                        misplacedCharIndexes = misplacedCharIndexes.Set(c - 'a');
+                        misplacedCharIndexes = misplacedCharIndexes.Set(c);
                         remainingWords = remainingWords
                             .Where(w => w[i] != c && w.Contains(c))
                             .ToArray();
                         break;
                     case FeedbackOption.NoMoreOccurrences:
-                        if (misplacedCharIndexes.IsSet(c - 'a'))
+                        if (misplacedCharIndexes.IsSet(c))
                         {
-                            // skip if same character misplaced elsewhere
-                            // required for seed test to pass: [InlineData(20241295, "mambo")]
+                            // eliminate words having char at the same position
+                            remainingWords = remainingWords.Where(w => w[i] != c).ToArray();
+
+                            // below filter looks useful but never eliminated a single word in the tests
+                            // remainingWords = remainingWords.Where(w => w.ContainsLetterAtPositionsOtherThan(c, i)).ToArray();
                             break;
                         }
 
@@ -117,9 +120,9 @@ public sealed class Solver
                         break;
                 }
 
-                if (remainingWords.Length == 0)
+                if (remainingWords.Length < 2)
                 {
-                    break; // word missing from dictionary or potential bug
+                    break; // solved, word missing from dictionary or potential bug
                 }
             }
 

@@ -21,7 +21,7 @@ public sealed class BitMaskTests
     public void Set_CreatesANewBitMask()
     {
         var bm1 = new BitMask();
-        var bm2 = bm1.Set(7).Set(3).Set(63);
+        var bm2 = bm1.Set(7).Set(0).Set(31);
         
         bm1.IsEmpty.Should().BeTrue();
         bm1.HasSetBits.Should().BeFalse();
@@ -30,15 +30,15 @@ public sealed class BitMaskTests
         bm2.HasSetBits.Should().BeTrue();
         bm2.Count.Should().Be(3);
         
-        for (var i = 0; i < 64; i++)
+        for (var i = 0; i < 32; i++)
         {
             bm1.IsSet(i).Should().BeFalse();
 
             switch (i)
             {
-                case 3:
+                case 0:
                 case 7:
-                case 63:
+                case 31:
                     bm2.IsSet(i).Should().BeTrue();
                     break;
                 default:
@@ -47,6 +47,6 @@ public sealed class BitMaskTests
             }
         }
 
-        bm2.ToArray().Should().Equal(3, 7, 63);
+        bm2.ToArray().Should().Equal(0, 7, 31);
     }
 }

@@ -7,9 +7,9 @@ namespace Wordle;
 public readonly struct Word : IReadOnlyList<byte>, IEquatable<Word>
 {
     private const byte CharCount = 26;
-    private const byte FirstChar = 1;
+    internal const byte FirstChar = 1;
     private const byte BitsPerChar = 5;
-    private const byte CharMask = 31;
+    private const byte CharMask = (1 << BitsPerChar) - 1;
     private const uint ULCharMask = CharMask;
     private const char Space = ' ';
     
@@ -56,6 +56,25 @@ public readonly struct Word : IReadOnlyList<byte>, IEquatable<Word>
         }
 
         return new Word(bits);
+    }
+
+    public bool ContainsLetterAtPositionsOtherThan(byte findChar, int positionToIgnore)
+    {
+        var bits = _bits;
+        unchecked
+        {
+            for (var i = 0; i < Solver.WordLength; i++)
+            {
+                if (i != positionToIgnore && (bits & ULCharMask) == findChar)
+                {
+                    return true;
+                }
+
+                bits >>= BitsPerChar;
+            }
+        }
+
+        return false;
     }
 
     public bool Contains(byte findChar)
