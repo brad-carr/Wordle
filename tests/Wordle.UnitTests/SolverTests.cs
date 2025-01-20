@@ -246,6 +246,9 @@ public sealed class SolverTests
         { "2025-01-16", "flint" },
         { "2025-01-17", "prose" },
         { "2025-01-18", "silly" },
+        { "2025-01-18", "silly" },
+        { "2025-01-19", "rower" },
+        { "2025-01-20", "squid" },
     };
 }
 
