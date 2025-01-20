@@ -35,8 +35,7 @@ public sealed class Guesser : IGuesser
         }
 
         // Fallback to the original approach: guess the word that eliminates the most possibilities
-        var guess = maybeGuess ?? GetNextWords(partialSolution, remainingWords).RandomElement(random);
-        return guess;
+        return maybeGuess ?? GetNextWords(partialSolution, remainingWords).RandomElement(random);
     }
 
     private Word? GuessForSinglePosition(
