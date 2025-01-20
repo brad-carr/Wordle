@@ -156,10 +156,10 @@ public sealed class SolverTests
                 var (solverSolution, guesses, failureReason) = solver.Solve(random);
 
                 // Assert
-                solverSolution
+                solverSolution.ToString()
                     .Should()
                     .Be(
-                        solution,
+                        solution.ToString(),
                         $"seed was {currentSeed}, guesses were {string.Join($" {Unicode.RightArrow} ", guesses)}, failure reason was {failureReason}"
                     );
                 guesses
@@ -266,7 +266,7 @@ public sealed class SolverFixture
         Solver = new Solver(console, Guesser, FeedbackProvider, SolutionWordList);
     }
 
-    public Guesser Guesser { get; }
+    public IGuesser Guesser { get; }
 
     public DynamicFeedbackProvider FeedbackProvider { get; }
 

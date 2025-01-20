@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Diagnostics;
+using Wordle.Core;
 
 namespace Wordle;
 
@@ -175,4 +176,25 @@ public readonly struct Word : IReadOnlyList<byte>, IEquatable<Word>
     public static bool operator ==(Word first, Word second) => first.Equals(second);
 
     public static bool operator !=(Word first, Word second) => !(first == second);
+
+    public int CountCommonChars(Word other) => this.Count(other.Contains);
+
+    public BitMask UnsolvedPositions()
+    {
+        var result = new BitMask();
+        var bits = _bits;
+        var i = 0;
+        while (bits != 0)
+        {
+            if ((bits & CharMask) == 0)
+            {
+                result = result.Set(i);
+            }
+
+            i++;
+            bits >>= BitsPerChar;
+        }
+
+        return result;
+    }
 }

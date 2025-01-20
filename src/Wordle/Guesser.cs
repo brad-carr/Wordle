@@ -18,6 +18,7 @@ public sealed class Guesser : IGuesser
         Random random, 
         Word partialSolution, 
         Word[] remainingWords, 
+        int attempt,
         int remainingAttempts)
     {
         if (remainingWords.Length == 1)

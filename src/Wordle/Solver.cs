@@ -53,16 +53,16 @@ public sealed class Solver
         var remainingWords = _solutionWordList;
         var solution = Word.Empty;
         var guesses = new List<Word>(maxAttempts);
-        var numAttempts = 0;
+        var attemptNo = 0;
 
-        while (numAttempts < maxAttempts)
+        while (attemptNo < maxAttempts)
         {
-            var remainingAttempts = maxAttempts - numAttempts++;
-            var guess = _guesser.Guess(random, solution, remainingWords, remainingAttempts);
+            var remainingAttempts = maxAttempts - attemptNo++;
+            var guess = _guesser.Guess(random, solution, remainingWords, attemptNo, remainingAttempts);
             guesses.Add(guess);
 
             _console.WriteLine(
-                $"Suggestion $magenta({numAttempts}): $green({guess}) - out of $magenta({"possibility".ToQuantity(remainingWords.Length)})"
+                $"Suggestion $magenta({attemptNo}): $green({guess}) - out of $magenta({"possibility".ToQuantity(remainingWords.Length)})"
             );
 
             var feedback = _feedbackProvider.GetFeedback(guess, remainingWords.Length);
