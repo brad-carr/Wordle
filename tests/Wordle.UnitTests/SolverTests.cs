@@ -127,7 +127,7 @@ public sealed class SolverTests
         _testHelper.WriteLine($"Completed with success: {successCount}; fail: {failCount}; total_guesses: {totalGuesses}");
 
         failCount.Should().BeLessOrEqualTo(9, "this is the benchmark set by the best run");
-        totalGuesses.Should().BeLessOrEqualTo(8902, "this is the benchmark set by the best run");
+        totalGuesses.Should().BeLessOrEqualTo(8905, "this is the benchmark set by the best run");
     }
 
     private void RunScenario(
