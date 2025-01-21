@@ -18,6 +18,7 @@ public sealed class Guesser : IGuesser
         Random random, 
         Word partialSolution, 
         Word[] remainingWords, 
+        Knowledge _,
         int attempt,
         int remainingAttempts)
     {

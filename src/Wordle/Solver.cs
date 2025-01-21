@@ -11,7 +11,6 @@ public sealed class Solver
     public const int DefaultMaxAttempts = 6;
 
     internal static readonly string SolvedFeedback = new('c', WordLength);
-
     private readonly IFeedbackProvider _feedbackProvider;
     private readonly Word[] _solutionWordList;
     private readonly IConsole _console;
@@ -54,11 +53,22 @@ public sealed class Solver
         var solution = Word.Empty;
         var guesses = new List<Word>(maxAttempts);
         var attemptNo = 0;
-
+        var forbiddenCharsBySlot = new BitMask[WordLength];
+        var charsNotInSolution = new BitMask();
+        
         while (attemptNo < maxAttempts)
         {
             var remainingAttempts = maxAttempts - attemptNo++;
-            var guess = _guesser.Guess(random, solution, remainingWords, attemptNo, remainingAttempts);
+
+            var guess = remainingWords.Length == 1 
+                ? remainingWords[0]
+                : _guesser.Guess(
+                    random, 
+                    solution, 
+                    remainingWords, 
+                    new Knowledge(charsNotInSolution, forbiddenCharsBySlot), 
+                    attemptNo, 
+                    remainingAttempts);
             guesses.Add(guess);
 
             _console.WriteLine(
@@ -94,6 +104,7 @@ public sealed class Solver
                         break;
 
                     case FeedbackOption.Misplaced:
+                        forbiddenCharsBySlot[i] = forbiddenCharsBySlot[i].Set(c);
                         misplacedCharIndexes = misplacedCharIndexes.Set(c);
                         remainingWords = remainingWords
                             .Where(w => w[i] != c && w.Contains(c))
@@ -108,6 +119,12 @@ public sealed class Solver
                             // below filter looks useful but never eliminated a single word in the tests
                             // remainingWords = remainingWords.Where(w => w.ContainsLetterAtPositionsOtherThan(c, i)).ToArray();
                             break;
+                        }
+
+                        forbiddenCharsBySlot[i] = forbiddenCharsBySlot[i].Set(c);
+                        if (!solution.Contains(c))
+                        {
+                            charsNotInSolution = charsNotInSolution.Set(c);
                         }
 
                         for (var j = 0; j < WordLength && remainingWords.Length > 0; j++)
