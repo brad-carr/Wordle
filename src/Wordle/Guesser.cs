@@ -55,7 +55,7 @@ public sealed class Guesser : IGuesser
         var maybeGuess = unsolvedCharMask
             .SelectMany(c => _guessWordsBySingleOccurringLetter[c])
             .Distinct()
-            .GroupBy(word => unsolvedCharMask.CountSetBitsWhere(word.Contains))
+            .GroupBy(word => word.CountCommonChars(unsolvedCharMask))
             .MaxBy(g => g.Key)? // group matching most criteria
             .RandomElement(random);
         return maybeGuess;

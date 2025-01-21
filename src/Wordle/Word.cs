@@ -8,10 +8,10 @@ namespace Wordle;
 public readonly struct Word : IReadOnlyList<byte>, IEquatable<Word>
 {
     private const byte CharCount = 26;
-    internal const byte FirstChar = 1;
+    private const byte FirstChar = 1;
     private const byte BitsPerChar = 5;
     private const byte CharMask = (1 << BitsPerChar) - 1;
-    private const uint ULCharMask = CharMask;
+    private const uint UCharMask = CharMask;
     private const char Space = ' ';
     
     public static IReadOnlyCollection<byte> Alphabet { get; } = GenerateAlphabet();
@@ -28,11 +28,16 @@ public readonly struct Word : IReadOnlyList<byte>, IEquatable<Word>
         return result;
     }
 
-    public static Word Empty { get; } = new(0U);
+    public static Word Empty { get; } = new();
 
     private readonly uint _bits;
+    private readonly BitMask _uniqueChars;
 
-    private Word(uint bits) => _bits = bits;
+    private Word(uint bits, BitMask uniqueChars)
+    {
+        _bits = bits;
+        _uniqueChars = uniqueChars;
+    }
 
     public int Count => Solver.WordLength;
 
@@ -41,6 +46,7 @@ public readonly struct Word : IReadOnlyList<byte>, IEquatable<Word>
     public static Word Create(string word)
     {
         var bits = 0U;
+        var mask = new BitMask();
         var i = Solver.WordLength;
         unchecked
         {
@@ -49,53 +55,21 @@ public readonly struct Word : IReadOnlyList<byte>, IEquatable<Word>
                 var c = word[i];
                 bits <<= BitsPerChar;
 
-                if (c != ' ')
+                if (c == ' ') // space
                 {
-                    bits |= c & ULCharMask; // case-insensitive
+                    continue;
                 }
+                
+                var b = c & UCharMask; // case-insensitive
+                bits |= b;
+                mask = mask.Set((int)b);
             }
         }
 
-        return new Word(bits);
+        return new Word(bits, mask);
     }
 
-    public bool ContainsLetterAtPositionsOtherThan(byte findChar, int positionToIgnore)
-    {
-        var bits = _bits;
-        unchecked
-        {
-            for (var i = 0; i < Solver.WordLength; i++)
-            {
-                if (i != positionToIgnore && (bits & ULCharMask) == findChar)
-                {
-                    return true;
-                }
-
-                bits >>= BitsPerChar;
-            }
-        }
-
-        return false;
-    }
-
-    public bool Contains(byte findChar)
-    {
-        var bits = _bits;
-        unchecked
-        {
-            for (var i = 0; i < Solver.WordLength; i++)
-            {
-                if ((bits & ULCharMask) == findChar)
-                {
-                    return true;
-                }
-
-                bits >>= BitsPerChar;
-            }
-        }
-
-        return false;
-    }
+    public bool Contains(byte findChar) => _uniqueChars.IsSet(findChar);
 
     public bool ContainsOnce(byte findChar, out int foundPos)
     {
@@ -106,7 +80,7 @@ public readonly struct Word : IReadOnlyList<byte>, IEquatable<Word>
         {
             for (var i = 0; i < Solver.WordLength; i++)
             {
-                if ((bits & ULCharMask) == findChar)
+                if ((bits & CharMask) == findChar)
                 {
                     if (foundPos >= 0)
                     {
@@ -138,8 +112,8 @@ public readonly struct Word : IReadOnlyList<byte>, IEquatable<Word>
     {
         var shift = pos * BitsPerChar;
         var positionalChar = (uint)charToSet << shift;
-        var clearMask = ~(ULCharMask << shift);
-        return new Word(_bits & clearMask | positionalChar);
+        var clearMask = ~(UCharMask << shift);
+        return new Word(_bits & clearMask | positionalChar, _uniqueChars.Set(charToSet));
     }
 
     public override string ToString()
@@ -148,7 +122,7 @@ public readonly struct Word : IReadOnlyList<byte>, IEquatable<Word>
         {
             for (var i = 0; i < Solver.WordLength; i++)
             {
-                var b = bits & ULCharMask;
+                var b = bits & CharMask;
                 span[i] = b == 0 ? Space : (char)(b + 'a' -1);
                 bits >>= BitsPerChar;
             }
@@ -176,22 +150,23 @@ public readonly struct Word : IReadOnlyList<byte>, IEquatable<Word>
     public static bool operator ==(Word first, Word second) => first.Equals(second);
 
     public static bool operator !=(Word first, Word second) => !(first == second);
+    
+    public int CountCommonChars(Word other) => CountCommonChars(other._uniqueChars);
 
-    public int CountCommonChars(Word other) => this.Count(other.Contains);
+    public int CountCommonChars(BitMask charSet) => (_uniqueChars & charSet).Count;
 
+    // TODO: add tests
     public BitMask UnsolvedPositions()
     {
         var result = new BitMask();
         var bits = _bits;
-        var i = 0;
-        while (bits != 0)
+        for (var i = 0; i < Solver.WordLength; i++)
         {
             if ((bits & CharMask) == 0)
             {
                 result = result.Set(i);
             }
 
-            i++;
             bits >>= BitsPerChar;
         }
 

@@ -249,6 +249,7 @@ public sealed class SolverTests
         { "2025-01-18", "silly" },
         { "2025-01-19", "rower" },
         { "2025-01-20", "squid" },
+        { "2025-01-21", "icing" },
     };
 }
 

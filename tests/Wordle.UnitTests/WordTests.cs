@@ -5,6 +5,34 @@ namespace Wordle.UnitTests;
 public sealed class WordTests
 {
     [Theory]
+    [InlineData("abcde", "     ", 0)]
+    [InlineData("abcde", "a    ", 1)]
+    [InlineData("abcde", " a   ", 1)]
+    [InlineData("abcde", "  a  ", 1)]
+    [InlineData("abcde", "   a ", 1)]
+    [InlineData("abcde", "    a", 1)]
+    [InlineData("abcde", "aa   ", 1)]
+    [InlineData("abcde", " aa  ", 1)]
+    [InlineData("abcde", "  aa ", 1)]
+    [InlineData("abcde", "   aa", 1)]
+    [InlineData("abcde", "abcde", 5)]
+    [InlineData("abcde", "edcba", 5)]
+    [InlineData("abcde", "bcdef", 4)]
+    [InlineData("abcde", "fedcb", 4)]
+    [InlineData("abcde", "cdefg", 3)]
+    [InlineData("abcde", "gfedc", 3)]
+    [InlineData("abcde", "defgh", 2)]
+    [InlineData("abcde", "hgfed", 2)]
+    [InlineData("abcde", "efghi", 1)]
+    [InlineData("abcde", "ihgfe", 1)]
+    [InlineData("abcde", "fghij", 0)]
+    [InlineData("abcde", "jihgf", 0)]
+    public void CountCommonChars_ReturnsExpectedValue(string first, string second, int expected)
+    {
+        Word.Create(first).CountCommonChars(Word.Create(second)).Should().Be(expected);
+    }
+
+    [Theory]
     [InlineData("abcde")]
     [InlineData(" bcd ")]
     [InlineData("     ")]

@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Microsoft.VisualBasic;
 using Wordle.Core;
 
 namespace Wordle.UnitTests;
@@ -49,4 +50,14 @@ public sealed class BitMaskTests
 
         bm2.ToArray().Should().Equal(0, 7, 31);
     }
+
+    [Theory]
+    [InlineData(0xFFFF, 0xFFFF, 0xFFFF)]
+    [InlineData(0xFFF0, 0x0FFF, 0x0FF0)]
+    [InlineData(0xFF00, 0x00FF, 0x0000)]
+    public void BitwiseAnd_ReturnsExpectedValue(uint first, uint second, uint expected)
+    {
+        (new BitMask(first) & new BitMask(second)).Should().Equal(new BitMask(expected));
+    }
+    
 }

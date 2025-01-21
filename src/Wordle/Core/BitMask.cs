@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 
 namespace Wordle.Core;
 
-public readonly struct BitMask : IReadOnlyCollection<byte>
+public readonly struct BitMask : IReadOnlyCollection<byte>, IEquatable<BitMask>
 {
     public static BitMask Empty { get; } = new();
 
@@ -14,7 +14,7 @@ public readonly struct BitMask : IReadOnlyCollection<byte>
     {
     }
 
-    private BitMask(uint value) => _value = value;
+    internal BitMask(uint value) => _value = value;
 
     public bool IsEmpty => _value == 0;
 
@@ -58,4 +58,12 @@ public readonly struct BitMask : IReadOnlyCollection<byte>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static uint ResetLowestSetBit(uint x) =>
         x & (x - 1U); // Bmi1.X64.ResetLowestSetBit - leverages wraparound if x==0
+
+    public static BitMask operator &(BitMask a, BitMask b) => new(a._value & b._value);
+
+    public bool Equals(BitMask other) => _value == other._value;
+
+    public override bool Equals(object? obj) => obj is BitMask other && Equals(other);
+
+    public override int GetHashCode() => _value.GetHashCode();
 }
