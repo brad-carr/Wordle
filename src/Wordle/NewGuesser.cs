@@ -98,7 +98,7 @@ public sealed class NewGuesser : IGuesser
 
         if (_solutionWords.Contains(word))
         {
-            score += 2; // favour words in solution list => improve chances if near to a solution
+            score += 1; // favour words in solution list => improve chances if near to a solution
         }
 
         return score;
