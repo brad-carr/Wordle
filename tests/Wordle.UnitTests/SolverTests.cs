@@ -255,6 +255,7 @@ public sealed class SolverTests
         { "2025-01-20", "squid" },
         { "2025-01-21", "icing" },
         { "2025-01-22", "reach" },
+        { "2025-01-23", "upper" },
     };
     
     private static string RenderGuesses(IReadOnlyCollection<Word> guesses) => 
