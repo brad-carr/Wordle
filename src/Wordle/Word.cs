@@ -39,6 +39,7 @@ public readonly struct Word : IReadOnlyList<byte>, IEquatable<Word>
         _uniqueChars = uniqueChars;
     }
 
+    public BitMask UniqueChars => _uniqueChars;
     public int Count => Solver.WordLength;
 
     public int Length => Solver.WordLength;
@@ -68,6 +69,9 @@ public readonly struct Word : IReadOnlyList<byte>, IEquatable<Word>
 
         return new Word(bits, mask);
     }
+
+    // TODO: test
+    public bool ContainsAny(BitMask charMask) => (_uniqueChars & charMask).HasSetBits;
 
     public bool Contains(byte findChar) => _uniqueChars.IsSet(findChar);
 
@@ -150,7 +154,9 @@ public readonly struct Word : IReadOnlyList<byte>, IEquatable<Word>
     public static bool operator ==(Word first, Word second) => first.Equals(second);
 
     public static bool operator !=(Word first, Word second) => !(first == second);
-    
+
+    public bool HasCharsInCommon(Word other) => ContainsAny(other._uniqueChars);
+
     public int CountCommonChars(Word other) => CountCommonChars(other._uniqueChars);
 
     public int CountCommonChars(BitMask charSet) => (_uniqueChars & charSet).Count;
@@ -171,5 +177,16 @@ public readonly struct Word : IReadOnlyList<byte>, IEquatable<Word>
         }
 
         return result;
+    }
+
+    public int UniqueCharCount() => _uniqueChars.Count;
+
+    // TODO: test
+    public void ForEachUnsolvedSlot(Action<int> action)
+    {
+        foreach (var i in UnsolvedPositions())
+        {
+            action(i);
+        }
     }
 }

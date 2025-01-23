@@ -28,22 +28,6 @@ public readonly struct BitMask : IReadOnlyCollection<byte>, IEquatable<BitMask>
 
     public bool IsSet(int index) => ((1U << index) & _value) > 0;
 
-    public int CountSetBitsWhere(Predicate<byte> criteria)
-    {
-        var count = 0;
-        for (var x = _value; x != 0;)
-        {
-            if (criteria((byte)BitOperations.TrailingZeroCount(x)))
-            {
-                count++;
-            }
-
-            x = ResetLowestSetBit(x);
-        }
-
-        return count;
-    }
-
     public IEnumerator<byte> GetEnumerator()
     {
         for (var x = _value; x != 0;)

@@ -54,6 +54,7 @@ public sealed class Solver
         var guesses = new List<Word>(maxAttempts);
         var attemptNo = 0;
         var forbiddenCharsBySlot = new BitMask[WordLength];
+        var maybeCharsBySlot = new BitMask[WordLength];
         var charsNotInSolution = new BitMask();
         
         while (attemptNo < maxAttempts)
@@ -66,7 +67,7 @@ public sealed class Solver
                     random, 
                     solution, 
                     remainingWords, 
-                    new Knowledge(charsNotInSolution, forbiddenCharsBySlot), 
+                    new Knowledge(charsNotInSolution, forbiddenCharsBySlot, maybeCharsBySlot), 
                     attemptNo, 
                     remainingAttempts);
             guesses.Add(guess);
@@ -100,11 +101,18 @@ public sealed class Solver
                         {
                             solution = solution.SetCharAtPos(c, i);
                             remainingWords = remainingWords.Where(w => w[i] == c).ToArray();
+
+                            // clear this char from 'maybes' to reset weight
+                            for (var j = 0; j < WordLength; j++)
+                            {
+                                maybeCharsBySlot[j] = maybeCharsBySlot[j].Clear(c);
+                            }
                         }
                         break;
 
                     case FeedbackOption.Misplaced:
                         forbiddenCharsBySlot[i] = forbiddenCharsBySlot[i].Set(c);
+                        solution.ForEachUnsolvedSlot(j => maybeCharsBySlot[j] = maybeCharsBySlot[j].Set(c));
                         misplacedCharIndexes = misplacedCharIndexes.Set(c);
                         remainingWords = remainingWords
                             .Where(w => w[i] != c && w.Contains(c))
@@ -153,6 +161,14 @@ public sealed class Solver
             }
 
             AddCommonPositionalCharsToSolution(remainingWords, ref solution);
+            
+            var unsolvedSlots = solution.UnsolvedPositions();
+            if (unsolvedSlots.Count == 1)
+            {
+                var slot = unsolvedSlots.First();
+                maybeCharsBySlot[slot] =
+                    remainingWords.Aggregate(new BitMask(), (cur, word) => cur.Set(word[slot]));
+            }
         }
 
         return (null, guesses, "maximum attempts reached without solution");

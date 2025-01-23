@@ -33,6 +33,8 @@ public sealed class SolverTests
     [InlineData(1, "wight")]
     [InlineData(1, "bacon")]
     [InlineData(1, "store")]
+    [InlineData(1, "vocal")]
+    [InlineData(1, "baker")]
     public void Solve_DynamicFeedback_ProblematicSeeds_ShouldFindSolutionWithinSixAttempts(
         int problematicSeed,
         string solutionLiteral
@@ -54,13 +56,13 @@ public sealed class SolverTests
             .Should()
             .Be(
                 solution.ToString(),
-                $"guesses were {string.Join($" {Unicode.RightArrow} ", guesses.Select(guess => $"'{guess.ToString()}'"))} with failure reason: {failureReason}"
+                $"guesses were {RenderGuesses(guesses)} with failure reason: {failureReason}"
             );
         guesses
             .Count.Should()
-            .BeLessOrEqualTo(Solver.DefaultMaxAttempts, $"guesses were {string.Join($" {Unicode.RightArrow} ", guesses)}");
+            .BeLessOrEqualTo(Solver.DefaultMaxAttempts, $"guesses were {RenderGuesses(guesses)}");
         failureReason.Should().BeNull();
-        _testHelper.WriteLine($"Solved '{solution.ToString()}' in {guesses.Count} attempts. Guesses: {string.Join($" {Unicode.RightArrow} ", guesses)}");
+        _testHelper.WriteLine($"Solved '{solution.ToString()}' in {guesses.Count} attempts. Guesses: {RenderGuesses(guesses)}");
     }
 
     [Theory(Skip = "Use this test to find problematic seeds for which the solver fails")]
@@ -107,7 +109,7 @@ public sealed class SolverTests
             .ToList()
             .ForEach(x =>
             {
-                var delimited = string.Join(", ", x.result.guesses.Select(g => $"'{g.ToString()}'"));
+                var delimited = RenderGuesses(x.result.guesses);
                 x.result.solution.Should().NotBeNull(
                     $"expected solution for '{x.solution.ToString()}' but failed after {"guess".ToQuantity(x.result.guesses.Count)}: {delimited} with reason: {x.result.failureReason}");
 
@@ -160,16 +162,18 @@ public sealed class SolverTests
                     .Should()
                     .Be(
                         solution.ToString(),
-                        $"seed was {currentSeed}, guesses were {string.Join($" {Unicode.RightArrow} ", guesses)}, failure reason was {failureReason}"
+                        $"seed was {currentSeed}, guesses were {RenderGuesses(guesses)}, failure reason was {failureReason}"
                     );
                 guesses
                     .Count.Should()
                     .BeLessOrEqualTo(
                         Solver.DefaultMaxAttempts,
-                        $"seed was {currentSeed}, guesses were {string.Join($" {Unicode.RightArrow} ", guesses)}, failure reason was {failureReason}"
+                        $"seed was {currentSeed}, guesses were {RenderGuesses(guesses)}, failure reason was {failureReason}"
                     );
                 failureReason.Should().BeNull();
                 currentSeed = currentSeed == int.MaxValue ? 0 : currentSeed + 1;
+                
+                _testHelper.WriteLine($"Solved '{solution.ToString()}' in {"guess".ToQuantity(guesses.Count)}: {RenderGuesses(guesses)}");
             });
     }
 
@@ -250,7 +254,11 @@ public sealed class SolverTests
         { "2025-01-19", "rower" },
         { "2025-01-20", "squid" },
         { "2025-01-21", "icing" },
+        { "2025-01-22", "reach" },
     };
+    
+    private static string RenderGuesses(IReadOnlyCollection<Word> guesses) => 
+        string.Join($" {Unicode.RightArrow} ", guesses.Select(guess => $"'{guess.ToString()}'"));
 }
 
 [CollectionDefinition("SolverCollection")]
@@ -263,7 +271,7 @@ public sealed class SolverFixture
         SolutionWordList = WordListReader.EnumerateSolutionWords().ToArray();
         var console = Mock.Of<IConsole>();
         FeedbackProvider = new DynamicFeedbackProvider();
-        Guesser = new Guesser();
+        Guesser = new NewGuesser();
         Solver = new Solver(console, Guesser, FeedbackProvider, SolutionWordList);
     }
 

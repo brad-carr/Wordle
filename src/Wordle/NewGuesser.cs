@@ -5,7 +5,9 @@ namespace Wordle;
 public sealed class NewGuesser : IGuesser
 {
     private readonly Word[] _guessWords = WordListReader.EnumerateGuessWords().Select(Word.Create).ToArray();
-    private readonly Word _startingGuess = Word.Create("aurei");
+    private readonly HashSet<Word> _solutionWords = WordListReader.EnumerateSolutionWords().Select(Word.Create).ToHashSet();
+    private readonly Word _startingGuess = Word.Create("trace"); // Word.Create("aurei");
+    private static readonly BitMask Vowels = Word.Create("aeiou").UniqueChars;
     
     public Word Guess(
         Random random, 
@@ -19,50 +21,98 @@ public sealed class NewGuesser : IGuesser
         {
             return _startingGuess;
         }
-        
-        IEnumerable<Word> reduced = _guessWords;
 
-        if (knowledge.CharsNotInSolution.HasSetBits)
-        {
-            reduced = reduced.Where(word => !word.ContainsAny(knowledge.CharsNotInSolution)).ToArray();
-        }
-        
-        if (partialSolution != Word.Empty)
-        {
-            var unsolvedChars = partialSolution
-                .UnsolvedPositions()
-                .Aggregate(
-                    new BitMask(), 
-                    (mask, i) => remainingWords.Aggregate(mask, (current, word) => current.Set(word[i])));
-
-            // Include all words having any unsolved characters
-            reduced = reduced.Where(word => word.Any(c => unsolvedChars.IsSet(c))).ToArray();
-        }
-        
-        // determine the group of all guess words having the greatest elimination power
-        reduced = reduced
-            .GroupBy(
-                guessWord => remainingWords.Count(word => word.HasCommonChars(guessWord)),
-                (_, words) => words.ToArray())
-            .MaxBy(words => words.Length)!
+        var highestScoringWords = _guessWords
+            .GroupBy(word => CalculateScore(word, partialSolution, knowledge))
+            .MaxBy(g => g.Key)!
             .ToArray();
-        
-        // from this group extract the subset of words that share the least number of letters with partialSolution
-        reduced = reduced.GroupBy(word => word.CountCommonChars(partialSolution)).MinBy(g => g.Key)!.ToArray();
 
-        // now reduce further choosing words having the most distinct characters
-        reduced = reduced.GroupBy(word => word.Distinct().Count()).MaxBy(g => g.Key)!.ToArray();
+        if (highestScoringWords.Length == 1)
+        {
+            return highestScoringWords[0];
+        }
 
-        // TODO: exclude words having forbidden chars in specified slots
-        reduced = reduced.Where(word => word.DoesNotContainForbiddenChars(knowledge.ForbiddenCharsBySlot)).ToArray();
-
-        // Reduce to words having the fewest number of banned chars in unsolved slots
-        reduced = reduced
-            .GroupBy(word => partialSolution.UnsolvedPositions().Count(i => knowledge.ForbiddenCharsBySlot[i].IsSet(word[i])))
-            .MinBy(g => g.Key)!
+        var guessWordsByEliminationPower = highestScoringWords
+            .GroupBy(word => CalculateEliminationPower(word, partialSolution, remainingWords))
             .ToArray();
-        
-        var guess = reduced.RandomElement(random);
-        return guess;
+
+        var powerfulGroup = guessWordsByEliminationPower
+            .MaxBy(k => k.Key)!
+            .ToArray();
+
+        var winner = powerfulGroup.RandomElement(random);
+        return winner;
+    }
+
+    private int CalculateScore(Word word, Word partialSolution, Knowledge knowledge)
+    {
+        if (word.ToString() == "flava")
+        {
+            Console.WriteLine();
+        }
+        var score = 0;
+        var charsAlreadySeen = new BitMask();
+        for (var i = 0; i < word.Length; i++)
+        {
+            var c = word[i];
+
+            if (partialSolution[i] == c)
+            {
+                continue; // Already solved at that slot, no new information gained
+            }
+
+            if (charsAlreadySeen.IsSet(c))
+            {
+                continue; // prefer uniqueness
+            }
+            charsAlreadySeen = charsAlreadySeen.Set(c);
+            
+            if (knowledge.CharsNotInSolution.IsSet(c))
+            {
+                continue; // Char not in solution, no new information to be gained by including it
+            }
+
+            if (knowledge.ForbiddenCharsBySlot[i].IsSet(c))
+            {
+                continue; // Already forbidden here, no new information gained
+            }
+
+            if (knowledge.MaybeCharsBySlot[i].IsSet(c))
+            {
+                score += 5; // real possibility letter could be in this slot => greater weight
+            }
+            else if (!partialSolution.Contains(c))
+            {
+                score += 3; // favour letters not yet seen
+            }
+            else
+            {
+                score += 1; // char in solution
+            }
+
+            if (!Vowels.IsSet(c))
+            {
+                score += 1; // favour consonants
+            }
+        }
+
+        if (_solutionWords.Contains(word))
+        {
+            score += 2; // favour words in solution list => improve chances if near to a solution
+        }
+
+        return score;
+    }
+    
+    private static int CalculateEliminationPower(Word word, Word partialSolution, Word[] remainingWords)
+    {
+        var initialCount = remainingWords.Length;
+        foreach (var i in partialSolution.UnsolvedPositions())
+        {
+            var c = word[i];
+            remainingWords = remainingWords.Where(w => w[i] != c).ToArray();
+        }
+
+        return initialCount - remainingWords.Length;
     }
 }
