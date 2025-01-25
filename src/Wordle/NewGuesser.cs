@@ -4,12 +4,13 @@ namespace Wordle;
 
 public sealed class NewGuesser : IGuesser
 {
+    private static readonly Word DefaultInitialGuess = "trace"; // "aurei";
+    private static readonly BitMask VowelsBitmap = Word.Create("aeiou").UniqueChars;
+    private static readonly BitMask ConsonantsBitmap = ~VowelsBitmap;
+
     private readonly Word[] _guessWords = WordListReader.GuessWords;
     private readonly HashSet<Word> _solutionWords = WordListReader.SolutionWords.ToHashSet();
-    private static readonly Word DefaultInitialGuess = "trace"; // "aurei";
-    private static readonly BitMask Vowels = Word.Create("aeiou").UniqueChars;
-    private static readonly BitMask Consonants = ~Vowels;
-
+    
     public Word InitialGuess { get; set; } = DefaultInitialGuess;
     
     public Word Guess(
@@ -48,10 +49,6 @@ public sealed class NewGuesser : IGuesser
 
     private int CalculateScore(Word word, Word partialSolution, Word mostCommonCharPerSlot, Knowledge knowledge)
     {
-        if (word.ToString() == "flava")
-        {
-            Console.WriteLine();
-        }
         var score = 0;
         var charsAlreadySeen = knowledge.CharsAlreadySeen;
         for (var i = 0; i < word.Length; i++)
@@ -95,7 +92,7 @@ public sealed class NewGuesser : IGuesser
                 score += 11; // favour unique chars in solution
             }
 
-            if (Consonants.IsSet(c))
+            if (ConsonantsBitmap.IsSet(c))
             {
                 score += 3; // favour consonants
             }
