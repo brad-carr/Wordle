@@ -4,11 +4,13 @@ namespace Wordle;
 
 public sealed class NewGuesser : IGuesser
 {
-    private readonly Word[] _guessWords = WordListReader.EnumerateGuessWords().Select(Word.Create).ToArray();
-    private readonly HashSet<Word> _solutionWords = WordListReader.EnumerateSolutionWords().Select(Word.Create).ToHashSet();
-    private readonly Word _startingGuess = Word.Create("trace"); // Word.Create("aurei");
+    private readonly Word[] _guessWords = WordListReader.GuessWords;
+    private readonly HashSet<Word> _solutionWords = WordListReader.SolutionWords.ToHashSet();
+    private static readonly Word DefaultInitialGuess = "trace"; // "aurei";
     private static readonly BitMask Vowels = Word.Create("aeiou").UniqueChars;
     private static readonly BitMask Consonants = ~Vowels;
+
+    public Word InitialGuess { get; set; } = DefaultInitialGuess;
     
     public Word Guess(
         Random random, 
@@ -20,7 +22,7 @@ public sealed class NewGuesser : IGuesser
     {
         if (attempt == 1)
         {
-            return _startingGuess;
+            return InitialGuess;
         }
 
         var mostCommonCharPerSlot = partialSolution

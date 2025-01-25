@@ -12,10 +12,6 @@ public readonly struct BitMask : IReadOnlyCollection<byte>, IEquatable<BitMask>
 
     private readonly uint _value;
 
-    public BitMask()
-    {
-    }
-
     internal BitMask(uint value) => _value = value;
 
     public bool IsEmpty => _value == 0;
@@ -39,6 +35,7 @@ public readonly struct BitMask : IReadOnlyCollection<byte>, IEquatable<BitMask>
         }
     }
 
+    // TODO test
     public override string ToString() => string.Create(Count, _value, (span, x) =>
     {
         var i = 0;
@@ -66,4 +63,8 @@ public readonly struct BitMask : IReadOnlyCollection<byte>, IEquatable<BitMask>
     public override bool Equals(object? obj) => obj is BitMask other && Equals(other);
 
     public override int GetHashCode() => _value.GetHashCode();
+
+    public static bool operator ==(BitMask left, BitMask right) => left.Equals(right);
+
+    public static bool operator !=(BitMask left, BitMask right) => !left.Equals(right);
 }

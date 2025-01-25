@@ -1,4 +1,4 @@
-namespace Wordle;
+namespace Wordle.Core;
 
 internal static class Unicode
 {

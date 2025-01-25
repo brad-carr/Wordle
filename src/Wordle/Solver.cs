@@ -11,8 +11,8 @@ public sealed class Solver
     public const int DefaultMaxAttempts = 6;
 
     internal static readonly string SolvedFeedback = new('c', WordLength);
-    private readonly IFeedbackProvider _feedbackProvider;
-    private readonly Word[] _solutionWordList;
+    public IFeedbackProvider FeedbackProvider { get; }
+    public Word[] SolutionWordList { get; }
     private readonly IConsole _console;
     private readonly IGuesser _guesser;
     
@@ -23,7 +23,7 @@ public sealed class Solver
         string[] solutionWordList
     )
     {
-        (_console, _guesser, _feedbackProvider, _solutionWordList) = (
+        (_console, _guesser, FeedbackProvider, SolutionWordList) = (
             console,
             guesser,
             feedbackProvider,
@@ -32,7 +32,7 @@ public sealed class Solver
     }
 
     public Solver(IConsole console, IGuesser guesser, IFeedbackProvider feedbackProvider)
-        : this(console, guesser, feedbackProvider, WordListReader.EnumerateSolutionWords().ToArray()) { }
+        : this(console, guesser, feedbackProvider, WordListReader.SolutionWordLiterals().ToArray()) { }
 
     public (Word? solution, IReadOnlyCollection<Word> guesses, string? reason) Solve(
         DateOnly publicationDate, 
@@ -49,7 +49,7 @@ public sealed class Solver
         int maxAttempts = DefaultMaxAttempts
     )
     {
-        var remainingWords = _solutionWordList;
+        var remainingWords = SolutionWordList;
         var solution = Word.Empty;
         var guesses = new List<Word>(maxAttempts);
         var attemptNo = 0;
@@ -62,7 +62,8 @@ public sealed class Solver
         {
             var remainingAttempts = maxAttempts - attemptNo++;
 
-            var guess = remainingWords.Length == 1 
+            var guess = 
+                remainingWords.Length == 1 
                 ? remainingWords[0]
                 : _guesser.Guess(
                     random, 
@@ -78,7 +79,7 @@ public sealed class Solver
                 $"Suggestion $magenta({attemptNo}): $green({guess}) - out of $magenta({"possibility".ToQuantity(remainingWords.Length)})"
             );
 
-            var feedback = _feedbackProvider.GetFeedback(guess, remainingWords.Length);
+            var feedback = FeedbackProvider.GetFeedback(guess, remainingWords.Length);
             if (feedback == null)
             {
                 return (null, guesses, "failed to acquire feedback for guess");

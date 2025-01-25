@@ -29,7 +29,7 @@ public sealed class WordTests
     [InlineData("abcde", "jihgf", 0)]
     public void CountCommonChars_ReturnsExpectedValue(string first, string second, int expected)
     {
-        Word.Create(first).CountCommonChars(Word.Create(second)).Should().Be(expected);
+        Word.Create(first).CountCommonChars(second).Should().Be(expected);
     }
 
     [Theory]

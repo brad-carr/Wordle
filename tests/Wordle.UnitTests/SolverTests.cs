@@ -1,4 +1,6 @@
-﻿namespace Wordle.UnitTests;
+﻿using Wordle.Core;
+
+namespace Wordle.UnitTests;
 
 using FluentAssertions;
 using Humanizer;
@@ -10,17 +12,8 @@ using Xunit;
 using Xunit.Abstractions;
 
 [Collection("SolverCollection")]
-public sealed class SolverTests
+public sealed class SolverTests(SolverFixture fixture, ITestOutputHelper testHelper)
 {
-    private readonly SolverFixture _fixture;
-    private readonly ITestOutputHelper _testHelper;
-
-    public SolverTests(SolverFixture fixture, ITestOutputHelper testHelper)
-    {
-        _fixture = fixture;
-        _testHelper = testHelper;
-    }
-
     [Theory]
     [InlineData(20241260, "mambo")] // fixed in commit 386c6c442ba2f515b08c769c53d6c253ba1c0b37
     [InlineData(20241295, "mambo")] // fixed in commit 2134bc918dab9cc7c39e1bf81fe0c59bfe605d24
@@ -59,7 +52,7 @@ public sealed class SolverTests
         var console = Mock.Of<IConsole>();
         var solution = Word.Create(solutionLiteral);
         var feedbackProvider = new DynamicFeedbackProvider(solution);
-        var guesser = _fixture.Guesser;
+        var guesser = fixture.Guesser;
         var solver = new Solver(console, guesser, feedbackProvider);
         var random = new Random(problematicSeed);
 
@@ -77,7 +70,7 @@ public sealed class SolverTests
             .Count.Should()
             .BeLessOrEqualTo(Solver.DefaultMaxAttempts, $"guesses were {RenderGuesses(guesses)}");
         failureReason.Should().BeNull();
-        _testHelper.WriteLine($"Solved '{solution.ToString()}' in {guesses.Count} attempts. Guesses: {RenderGuesses(guesses)}");
+        testHelper.WriteLine($"Solved '{solution.ToString()}' in {guesses.Count} attempts. Guesses: {RenderGuesses(guesses)}");
     }
 
     [Theory(Skip = "Use this test to find problematic seeds for which the solver fails")]
@@ -107,47 +100,127 @@ public sealed class SolverTests
         Thread.CurrentThread.Priority = ThreadPriority.Highest;
 
         const int seed = 1;
-        var solver = _fixture.Solver;
+        var solverStats = SolveAllSolutionWords(fixture.Solver, fixture.FeedbackProvider, () => new Random(seed));
+
+        solverStats.GuessesBySolution.ForEach(x =>
+            {
+                var delimited = RenderGuesses(x.Guesses);
+                x.Solved.Should().BeTrue(
+                    $"expected solution for '{x.Solution.ToString()}' but failed after {"guess".ToQuantity(x.Guesses.Count)}: {delimited} with reason: {x.FailureReason}");
+
+                testHelper.WriteLine(x.Guesses.Count > Solver.DefaultMaxAttempts
+                    ? $"Failed for '{x.Solution.ToString()}' after {"guess".ToQuantity(x.Guesses.Count)}: {delimited}"
+                    : $"Solved '{x.Solution.ToString()}' in {x.Guesses.Count} attempts ; guesses: {delimited}");
+            });
+
+        var totalGuessCount = solverStats.SuccessCount + solverStats.FailCount;
+        var avgGuessCount = solverStats.TotalGuesses * 1d / totalGuessCount;
+        testHelper.WriteLine(
+            $"Completed with success: {solverStats.SuccessCount}; fail: {solverStats.FailCount}; total_guesses: {solverStats.TotalGuesses}; avg_guesses: {avgGuessCount:3F}");
+
+        solverStats.FailCount.Should().BeLessOrEqualTo(9, "this is the benchmark set by the best run");
+        totalGuessCount.Should().BeLessOrEqualTo(9057, "this is the benchmark set by the best run");
+        //totalGuesses.Should().BeLessOrEqualTo(8905, "this is the benchmark set by the best run");
+    }
+
+    private record SolutionGuesses(
+        Word Solution, 
+        bool Solved,
+        string? FailureReason,
+        IReadOnlyCollection<Word> Guesses);
+
+    private record AllWordsSolverStats(
+        int SuccessCount,
+        int FailCount,
+        int TotalGuesses,
+        List<SolutionGuesses> GuessesBySolution);
+
+    [Fact(Skip="more of a test harness to find the optimal initial guess that has the most impact")]
+    public void FindBestInitialWord()
+    {
+        var solutionWordLiterals = WordListReader
+            .SolutionWordLiterals()
+            .ToArray();
+        var solutionWords = solutionWordLiterals
+            .Select(Word.Create)
+            .ToArray();
+        var rankedInitialGuesses = 
+            WordListReader
+            .GuessWords
+            .OrderByDescending(word => word.CalculateEliminationPower(Word.Empty, solutionWords))
+            .ToArray();
+
+        var guesser = new NewGuesser();
+        var console = Mock.Of<IConsole>();
+        var feedbackProvider = new DynamicFeedbackProvider();
+        var solver = new Solver(console, guesser, feedbackProvider, solutionWordLiterals);        
+        
+        const int seed = 1;
+        var bestAverage = double.MaxValue;
+        foreach (var initialGuess in rankedInitialGuesses.Prepend("trace").Prepend("shade"))
+        {
+            guesser.InitialGuess = initialGuess;
+            var stats = SolveAllSolutionWords(solver, feedbackProvider, () => new Random(seed));
+            if (stats.FailCount > 0)
+            {
+                testHelper.WriteLine($"Initial: '{initialGuess.ToString()}'; fail_count={stats.FailCount}");
+                continue;
+            }
+
+            if (stats.GuessesBySolution.Any(x => x.Guesses.Count > Solver.DefaultMaxAttempts))
+            {
+                testHelper.WriteLine($"Initial: '{initialGuess.ToString()}'; EXHAUSTION");
+                continue;
+            }
+
+            var average = stats.TotalGuesses / (double)solutionWords.Length;
+            if (average < bestAverage)
+            {
+                testHelper.WriteLine($"Initial: '{initialGuess.ToString()}'; avg: {average:F2} (NEW BEST)");
+                bestAverage = average;
+            }
+            else
+            {
+                testHelper.WriteLine($"Initial: '{initialGuess.ToString()}'; avg: {average:F2}");
+            }
+        }
+    }
+    
+    private static AllWordsSolverStats SolveAllSolutionWords(Solver solver, DynamicFeedbackProvider feedbackProvider, Func<Random> newRandom)
+    {
         var (successCount, failCount) = (0, 0);
         var totalGuesses = 0;
         
-        _fixture
+        var solverStats = solver
             .SolutionWordList
-            .Select(literal =>
+            .Select(targetWord =>
             {
-                var solution =  Word.Create(literal);
-                var random = new Random(seed);
-                _fixture.FeedbackProvider.Solution = solution;
-                return (solution, result: solver.Solve(random, 1000));
+                var random = newRandom();
+                feedbackProvider.Solution = targetWord;
+                return (targetWord, result: solver.Solve(random, 1000));
             })
             .OrderBy(x => x.result.guesses.Count)
-            .ToList()
-            .ForEach(x =>
+            .ToList();
+
+        foreach (var x in solverStats)
+        {
+            if (x.result.solution == null)
             {
-                var delimited = RenderGuesses(x.result.guesses);
-                x.result.solution.Should().NotBeNull(
-                    $"expected solution for '{x.solution.ToString()}' but failed after {"guess".ToQuantity(x.result.guesses.Count)}: {delimited} with reason: {x.result.failureReason}");
+                failCount++;
+            }
+            else
+            {
+                successCount++;
+                totalGuesses +=x.result.guesses.Count;    
+            }
+        }
 
-                totalGuesses += x.result.guesses.Count;
-                if (x.result.guesses.Count > Solver.DefaultMaxAttempts)
-                {
-                    failCount++;
-                    _testHelper.WriteLine($"Failed for '{x.solution.ToString()}' after {"guess".ToQuantity(x.result.guesses.Count)}: {delimited}");
-                }
-                else
-                {
-                    successCount++;
-                    _testHelper.WriteLine($"Solved '{x.solution.ToString()}' in {x.result.guesses.Count} attempts ; guesses: {delimited}");
-                }
-            });
-
-        var avgGuessCount = totalGuesses * 1d / (successCount + failCount);
-        _testHelper.WriteLine(
-            $"Completed with success: {successCount}; fail: {failCount}; total_guesses: {totalGuesses}; avg_guesses: {avgGuessCount:3F}");
-
-        failCount.Should().BeLessOrEqualTo(9, "this is the benchmark set by the best run");
-        totalGuesses.Should().BeLessOrEqualTo(9057, "this is the benchmark set by the best run");
-        //totalGuesses.Should().BeLessOrEqualTo(8905, "this is the benchmark set by the best run");
+        return new AllWordsSolverStats(
+            successCount, 
+            failCount, 
+            totalGuesses, 
+            solverStats.Select(x => 
+                new SolutionGuesses(x.targetWord, x.result.solution.HasValue, x.result.failureReason, x.result.guesses.ToArray())).ToList());
     }
 
     private void RunScenario(
@@ -160,8 +233,8 @@ public sealed class SolverTests
         var publicationDate = DateOnly.Parse(publicationDateLiteral);
         var solution = Word.Create(solutionLiteral);
         var initialSeed = Solver.GetSeed(publicationDate);
-        var solver = _fixture.Solver;
-        _fixture.FeedbackProvider.Solution = solution;
+        var solver = fixture.Solver;
+        fixture.FeedbackProvider.Solution = solution;
         var currentSeed = initialSeed;
 
         Enumerable
@@ -191,7 +264,7 @@ public sealed class SolverTests
                 failureReason.Should().BeNull();
                 currentSeed = currentSeed == int.MaxValue ? 0 : currentSeed + 1;
                 
-                _testHelper.WriteLine($"Solved '{solution.ToString()}' in {"guess".ToQuantity(guesses.Count)}: {RenderGuesses(guesses)}");
+                testHelper.WriteLine($"Solved '{solution.ToString()}' in {"guess".ToQuantity(guesses.Count)}: {RenderGuesses(guesses)}");
             });
     }
 
@@ -207,7 +280,7 @@ public sealed class SolverTests
             .Setup(mock => mock.GetFeedback(It.IsAny<Word>(), It.IsAny<int>()))
             .Returns("nnnnn");
 
-        var solver = new Solver(console, _fixture.Guesser, feedbackProviderMock.Object);
+        var solver = new Solver(console, fixture.Guesser, feedbackProviderMock.Object);
 
         // Act
         var (solution, guesses, failureReason) = solver.Solve(publicationDate);
@@ -232,7 +305,7 @@ public sealed class SolverTests
             .Setup(mock => mock.GetFeedback(It.IsAny<Word>(), It.IsAny<int>()))
             .Returns((string)null!);
 
-        var solver = new Solver(console, _fixture.Guesser, feedbackProviderMock.Object);
+        var solver = new Solver(console, fixture.Guesser, feedbackProviderMock.Object);
 
         // Act
         var (solution, guesses, failureReason) = solver.Solve(publicationDate);
@@ -274,6 +347,7 @@ public sealed class SolverTests
         { "2025-01-22", "reach" },
         { "2025-01-23", "upper" },
         { "2025-01-24", "crepe" },
+        // { "2025-01-25", "" },
     };
     
     private static string RenderGuesses(IReadOnlyCollection<Word> guesses) => 
@@ -287,7 +361,7 @@ public sealed class SolverFixture
 {
     public SolverFixture()
     {
-        SolutionWordList = WordListReader.EnumerateSolutionWords().ToArray();
+        SolutionWordList = WordListReader.SolutionWordLiterals().ToArray();
         var console = Mock.Of<IConsole>();
         FeedbackProvider = new DynamicFeedbackProvider();
         Guesser = new NewGuesser();

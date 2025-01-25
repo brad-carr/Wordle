@@ -8,8 +8,8 @@ public class WordListReaderTests
     public void SolutionWords_ShouldBeASubsetOf_GuessWords()
     {
         // Arrange
-        var solutionWords = WordListReader.EnumerateSolutionWords().ToHashSet();
-        var guessWords = WordListReader.EnumerateGuessWords().ToHashSet();
+        var solutionWords = WordListReader.SolutionWordLiterals().ToHashSet();
+        var guessWords = WordListReader.GuessWordLiterals().ToHashSet();
         
         // Act
         var missingWords = solutionWords.Except(guessWords).OrderBy(word => word).ToArray();
@@ -17,4 +17,9 @@ public class WordListReaderTests
         // Assert
         missingWords.Should().BeEmpty($"expected these solution words to be in guess words: {string.Join(", ", missingWords)}");
     }
+
+    [Theory]
+    [InlineData("sooey")]
+    public void ShouldDeriveOptimalStartWord(string expected) =>
+        WordListReader.DeriveOptimalStartWord().ToString().Should().Be(expected);
 }

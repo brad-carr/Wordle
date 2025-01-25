@@ -160,6 +160,8 @@ public readonly struct Word : IReadOnlyList<byte>, IEquatable<Word>
 
     public int CountCommonChars(BitMask charSet) => (_uniqueChars & charSet).Count;
 
+    public static implicit operator Word(string literal) => Create(literal);
+    
     // TODO: add tests
     public BitMask UnsolvedPositions()
     {

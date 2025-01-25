@@ -8,10 +8,9 @@ public sealed class Guesser : IGuesser
     
     public Guesser()
     {
-        var guessWords = WordListReader.EnumerateGuessWords().Select(Word.Create).ToArray();
         _guessWordsBySingleOccurringLetter = Word.Alphabet.ToDictionary(
             c => c,
-            c => guessWords.Where(w => w.ContainsOnce(c, out _)).ToArray());
+            c => WordListReader.GuessWords.Where(w => w.ContainsOnce(c, out _)).ToArray());
     }
     
     public Word Guess(

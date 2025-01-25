@@ -1,3 +1,4 @@
+using Wordle.Core;
 using Wordle.Interaction;
 
 namespace Wordle.Feedback;

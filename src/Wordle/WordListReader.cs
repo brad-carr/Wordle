@@ -2,12 +2,13 @@ namespace Wordle;
 
 internal static class WordListReader
 {
-    public static IEnumerable<string> EnumerateGuessWords() => EnumerateLines("guess-word-list.txt");
-    public static IEnumerable<string> EnumerateSolutionWords() => EnumerateLines("solution-word-list.txt");
-    
-    public static Word OptimalStartWord(Word partialSolution, Word[] remainingWords) => EnumerateGuessWords()
-        .Select(Word.Create)
-        .GroupBy(word => word.CalculateEliminationPower(partialSolution, remainingWords))!
+    public static IEnumerable<string> GuessWordLiterals() => EnumerateLines("guess-word-list.txt");
+    public static IEnumerable<string> SolutionWordLiterals() => EnumerateLines("solution-word-list.txt");
+    public static Word[] GuessWords { get; } = GuessWordLiterals().Select(Word.Create).ToArray();
+    public static Word[] SolutionWords { get; } = SolutionWordLiterals().Select(Word.Create).ToArray();
+
+    public static Word DeriveOptimalStartWord() => GuessWords
+        .GroupBy(word => word.CalculateEliminationPower(Word.Empty, SolutionWords))!
         .MaxBy(g => g.Key)!
         .First();
 
