@@ -90,7 +90,7 @@ public sealed class NewGuesser : IGuesser
 
             if (c == mostCommonCharPerSlot[i])
             {
-                score += 3; // maximum elimination potential
+                score += 4; // maximum elimination potential
             }
 
             if (!partialSolution.Contains(c))
