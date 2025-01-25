@@ -13,7 +13,6 @@ public readonly struct Word : IReadOnlyList<byte>, IEquatable<Word>
     private const byte CharMask = (1 << BitsPerChar) - 1;
     private const uint UCharMask = CharMask;
     private const char Space = ' ';
-    
     public static IReadOnlyCollection<byte> Alphabet { get; } = GenerateAlphabet();
 
     private static byte[] GenerateAlphabet()
@@ -38,7 +37,7 @@ public readonly struct Word : IReadOnlyList<byte>, IEquatable<Word>
         _bits = bits;
         _uniqueChars = uniqueChars;
     }
-
+    
     public BitMask UniqueChars => _uniqueChars;
     public int Count => Solver.WordLength;
 
@@ -177,16 +176,5 @@ public readonly struct Word : IReadOnlyList<byte>, IEquatable<Word>
         }
 
         return result;
-    }
-
-    public int UniqueCharCount() => _uniqueChars.Count;
-
-    // TODO: test
-    public void ForEachUnsolvedSlot(Action<int> action)
-    {
-        foreach (var i in UnsolvedPositions())
-        {
-            action(i);
-        }
     }
 }

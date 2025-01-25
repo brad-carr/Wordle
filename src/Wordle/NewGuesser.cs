@@ -106,13 +106,13 @@ public sealed class NewGuesser : IGuesser
     
     private static int CalculateEliminationPower(Word word, Word partialSolution, Word[] remainingWords)
     {
-        var initialCount = remainingWords.Length;
+        IEnumerable<Word> reduced = remainingWords;
         foreach (var i in partialSolution.UnsolvedPositions())
         {
             var c = word[i];
-            remainingWords = remainingWords.Where(w => w[i] != c).ToArray();
+            reduced = reduced.Where(w => w[i] != c);
         }
 
-        return initialCount - remainingWords.Length;
+        return remainingWords.Length - reduced.Count();
     }
 }
