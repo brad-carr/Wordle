@@ -22,8 +22,13 @@ public sealed class NewGuesser : IGuesser
             return _startingGuess;
         }
 
+        var mostCommonCharPerSlot = partialSolution
+            .UnsolvedPositions()
+            .Aggregate(Word.Empty, (w, i) => 
+                w.SetCharAtPos(remainingWords.CountBy(x => x[i]).MaxBy(kvp => kvp.Value).Key, i));
+        
         var highestScoringWords = _guessWords
-            .GroupBy(word => CalculateScore(word, partialSolution, knowledge))
+            .GroupBy(word => CalculateScore(word, partialSolution, mostCommonCharPerSlot, knowledge))
             .MaxBy(g => g.Key)!
             .ToArray();
 
@@ -44,14 +49,14 @@ public sealed class NewGuesser : IGuesser
         return winner;
     }
 
-    private int CalculateScore(Word word, Word partialSolution, Knowledge knowledge)
+    private int CalculateScore(Word word, Word partialSolution, Word mostCommonCharPerSlot, Knowledge knowledge)
     {
         if (word.ToString() == "flava")
         {
             Console.WriteLine();
         }
         var score = 0;
-        var charsAlreadySeen = new BitMask();
+        var charsAlreadySeen = knowledge.CharsAlreadySeen;
         for (var i = 0; i < word.Length; i++)
         {
             var c = word[i];
@@ -61,12 +66,6 @@ public sealed class NewGuesser : IGuesser
                 continue; // Already solved at that slot, no new information gained
             }
 
-            if (charsAlreadySeen.IsSet(c))
-            {
-                continue; // prefer uniqueness
-            }
-            charsAlreadySeen = charsAlreadySeen.Set(c);
-            
             if (knowledge.CharsNotInSolution.IsSet(c))
             {
                 continue; // Char not in solution, no new information to be gained by including it
@@ -77,23 +76,34 @@ public sealed class NewGuesser : IGuesser
                 continue; // Already forbidden here, no new information gained
             }
 
+            score += 1;
+            
+            if (!charsAlreadySeen.IsSet(c))
+            {
+                score += 3; // favour new letters
+            }
+            
             if (knowledge.MaybeCharsBySlot[i].IsSet(c))
             {
-                score += 5; // real possibility letter could be in this slot => greater weight
+                score += 2; // improved chance of success
             }
-            else if (!partialSolution.Contains(c))
+
+            if (c == mostCommonCharPerSlot[i])
             {
-                score += 3; // favour letters not yet seen
+                score += 3; // maximum elimination potential
             }
-            else
+
+            if (!partialSolution.Contains(c))
             {
-                score += 1; // char in solution
+                score += 1; // favour unique chars in solution
             }
 
             if (!Vowels.IsSet(c))
             {
                 score += 1; // favour consonants
             }
+
+            charsAlreadySeen = charsAlreadySeen.Set(c);
         }
 
         if (_solutionWords.Contains(word))

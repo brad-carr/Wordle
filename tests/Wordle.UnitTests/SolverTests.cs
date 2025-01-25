@@ -35,6 +35,21 @@ public sealed class SolverTests
     [InlineData(1, "store")]
     [InlineData(1, "vocal")]
     [InlineData(1, "baker")]
+    [InlineData(1, "wafer")]
+    [InlineData(1, "couch")]
+    [InlineData(1, "crave")]
+    [InlineData(1, "craze")]
+    [InlineData(1, "fanny")]
+    [InlineData(1, "nanny")]
+    [InlineData(1, "paper")]
+    [InlineData(1, "parer")]
+    [InlineData(1, "rarer")]
+    [InlineData(1, "sassy")]
+    [InlineData(1, "savvy")]
+    [InlineData(1, "vouch")]
+    [InlineData(1, "diver")]
+    [InlineData(1, "rider")]
+
     public void Solve_DynamicFeedback_ProblematicSeeds_ShouldFindSolutionWithinSixAttempts(
         int problematicSeed,
         string solutionLiteral
@@ -125,8 +140,10 @@ public sealed class SolverTests
                     _testHelper.WriteLine($"Solved '{x.solution.ToString()}' in {x.result.guesses.Count} attempts ; guesses: {delimited}");
                 }
             });
-        
-        _testHelper.WriteLine($"Completed with success: {successCount}; fail: {failCount}; total_guesses: {totalGuesses}");
+
+        var avgGuessCount = totalGuesses * 1d / (successCount + failCount);
+        _testHelper.WriteLine(
+            $"Completed with success: {successCount}; fail: {failCount}; total_guesses: {totalGuesses}; avg_guesses: {avgGuessCount:3F}");
 
         failCount.Should().BeLessOrEqualTo(9, "this is the benchmark set by the best run");
         totalGuesses.Should().BeLessOrEqualTo(8905, "this is the benchmark set by the best run");
@@ -250,12 +267,12 @@ public sealed class SolverTests
         { "2025-01-16", "flint" },
         { "2025-01-17", "prose" },
         { "2025-01-18", "silly" },
-        { "2025-01-18", "silly" },
         { "2025-01-19", "rower" },
         { "2025-01-20", "squid" },
         { "2025-01-21", "icing" },
         { "2025-01-22", "reach" },
         { "2025-01-23", "upper" },
+        { "2025-01-24", "crepe" },
     };
     
     private static string RenderGuesses(IReadOnlyCollection<Word> guesses) => 

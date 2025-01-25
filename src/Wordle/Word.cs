@@ -116,7 +116,7 @@ public readonly struct Word : IReadOnlyList<byte>, IEquatable<Word>
         var shift = pos * BitsPerChar;
         var positionalChar = (uint)charToSet << shift;
         var clearMask = ~(UCharMask << shift);
-        return new Word(_bits & clearMask | positionalChar, _uniqueChars.Set(charToSet));
+        return new Word((_bits & clearMask) | positionalChar, _uniqueChars.Set(charToSet));
     }
 
     public override string ToString()

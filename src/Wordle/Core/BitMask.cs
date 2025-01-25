@@ -1,9 +1,11 @@
 using System.Collections;
+using System.Diagnostics;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 
 namespace Wordle.Core;
 
+[DebuggerDisplay("{ToString()} ({_value})")]
 public readonly struct BitMask : IReadOnlyCollection<byte>, IEquatable<BitMask>
 {
     public static BitMask Empty { get; } = new();
@@ -37,6 +39,16 @@ public readonly struct BitMask : IReadOnlyCollection<byte>, IEquatable<BitMask>
         }
     }
 
+    public override string ToString() => string.Create(Count, _value, (span, x) =>
+    {
+        var i = 0;
+        while (x != 0)
+        {
+            span[i++] = (char)('a' + BitOperations.TrailingZeroCount(x) - 1);
+            x = ResetLowestSetBit(x);
+        }
+    });
+
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -44,6 +56,8 @@ public readonly struct BitMask : IReadOnlyCollection<byte>, IEquatable<BitMask>
         x & (x - 1U); // Bmi1.X64.ResetLowestSetBit - leverages wraparound if x==0
 
     public static BitMask operator ~(BitMask a) => new(~a._value);
+
+    public static BitMask operator |(BitMask a, BitMask b) => new(a._value | b._value);
 
     public static BitMask operator &(BitMask a, BitMask b) => new(a._value & b._value);
 

@@ -55,7 +55,8 @@ public sealed class Solver
         var attemptNo = 0;
         var forbiddenCharsBySlot = new BitMask[WordLength];
         var maybeCharsBySlot = new BitMask[WordLength];
-        var charsNotInSolution = new BitMask();
+        var charsNotInSolution = BitMask.Empty;
+        var charsAlreadySeen = BitMask.Empty;
         
         while (attemptNo < maxAttempts)
         {
@@ -67,11 +68,12 @@ public sealed class Solver
                     random, 
                     solution, 
                     remainingWords, 
-                    new Knowledge(charsNotInSolution, forbiddenCharsBySlot, maybeCharsBySlot), 
+                    new Knowledge(charsAlreadySeen, charsNotInSolution, forbiddenCharsBySlot, maybeCharsBySlot), 
                     attemptNo, 
                     remainingAttempts);
             guesses.Add(guess);
-
+            charsAlreadySeen |= guess.UniqueChars;
+            
             _console.WriteLine(
                 $"Suggestion $magenta({attemptNo}): $green({guess}) - out of $magenta({"possibility".ToQuantity(remainingWords.Length)})"
             );
@@ -162,7 +164,6 @@ public sealed class Solver
                 maybeCharsBySlot[slot] =
                     remainingWords.Aggregate(new BitMask(), (cur, word) => cur.Set(word[slot]))
                     & ~forbiddenCharsBySlot[slot];
-
             }
         }
 
