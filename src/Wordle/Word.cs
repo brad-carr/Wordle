@@ -177,4 +177,16 @@ public readonly struct Word : IReadOnlyList<byte>, IEquatable<Word>
 
         return result;
     }
+    
+    public int CalculateEliminationPower(Word partialSolution, Word[] remainingWords)
+    {
+        IEnumerable<Word> reduced = remainingWords;
+        foreach (var i in partialSolution.UnsolvedPositions())
+        {
+            var c = this[i];
+            reduced = reduced.Where(w => w[i] != c);
+        }
+
+        return remainingWords.Length - reduced.Count();
+    }    
 }

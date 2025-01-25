@@ -8,6 +8,7 @@ public sealed class NewGuesser : IGuesser
     private readonly HashSet<Word> _solutionWords = WordListReader.EnumerateSolutionWords().Select(Word.Create).ToHashSet();
     private readonly Word _startingGuess = Word.Create("trace"); // Word.Create("aurei");
     private static readonly BitMask Vowels = Word.Create("aeiou").UniqueChars;
+    private static readonly BitMask Consonants = ~Vowels;
     
     public Word Guess(
         Random random, 
@@ -37,16 +38,10 @@ public sealed class NewGuesser : IGuesser
             return highestScoringWords[0];
         }
 
-        var guessWordsByEliminationPower = highestScoringWords
-            .GroupBy(word => CalculateEliminationPower(word, partialSolution, remainingWords))
-            .ToArray();
-
-        var powerfulGroup = guessWordsByEliminationPower
+        return highestScoringWords
+            .GroupBy(word => word.CalculateEliminationPower(partialSolution, remainingWords))
             .MaxBy(k => k.Key)!
-            .ToArray();
-
-        var winner = powerfulGroup.RandomElement(random);
-        return winner;
+            .RandomElement(random);
     }
 
     private int CalculateScore(Word word, Word partialSolution, Word mostCommonCharPerSlot, Knowledge knowledge)
@@ -76,31 +71,31 @@ public sealed class NewGuesser : IGuesser
                 continue; // Already forbidden here, no new information gained
             }
 
-            score += 1;
+            score += 5;
             
+            if (c == mostCommonCharPerSlot[i])
+            {
+                score += 43; // maximum elimination potential
+            }
+
             if (!charsAlreadySeen.IsSet(c))
             {
-                score += 3; // favour new letters
+                score += 30; // favour new letters
             }
             
             if (knowledge.MaybeCharsBySlot[i].IsSet(c))
             {
-                score += 2; // improved chance of success
-            }
-
-            if (c == mostCommonCharPerSlot[i])
-            {
-                score += 4; // maximum elimination potential
+                score += 15; // improved chance of success
             }
 
             if (!partialSolution.Contains(c))
             {
-                score += 1; // favour unique chars in solution
+                score += 11; // favour unique chars in solution
             }
 
-            if (!Vowels.IsSet(c))
+            if (Consonants.IsSet(c))
             {
-                score += 1; // favour consonants
+                score += 3; // favour consonants
             }
 
             charsAlreadySeen = charsAlreadySeen.Set(c);
@@ -108,21 +103,9 @@ public sealed class NewGuesser : IGuesser
 
         if (_solutionWords.Contains(word))
         {
-            score += 1; // favour words in solution list => improve chances if near to a solution
+            score += 10; // favour words in solution list => improve chances if near to a solution
         }
 
         return score;
-    }
-    
-    private static int CalculateEliminationPower(Word word, Word partialSolution, Word[] remainingWords)
-    {
-        IEnumerable<Word> reduced = remainingWords;
-        foreach (var i in partialSolution.UnsolvedPositions())
-        {
-            var c = word[i];
-            reduced = reduced.Where(w => w[i] != c);
-        }
-
-        return remainingWords.Length - reduced.Count();
     }
 }

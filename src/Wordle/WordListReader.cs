@@ -4,8 +4,14 @@ internal static class WordListReader
 {
     public static IEnumerable<string> EnumerateGuessWords() => EnumerateLines("guess-word-list.txt");
     public static IEnumerable<string> EnumerateSolutionWords() => EnumerateLines("solution-word-list.txt");
+    
+    public static Word OptimalStartWord(Word partialSolution, Word[] remainingWords) => EnumerateGuessWords()
+        .Select(Word.Create)
+        .GroupBy(word => word.CalculateEliminationPower(partialSolution, remainingWords))!
+        .MaxBy(g => g.Key)!
+        .First();
 
-    public static IEnumerable<string> EnumerateLines(string fileName)
+    private static IEnumerable<string> EnumerateLines(string fileName)
     {
         var assembly =
             System.Reflection.Assembly.GetExecutingAssembly()
