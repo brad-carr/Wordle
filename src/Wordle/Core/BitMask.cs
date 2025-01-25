@@ -43,6 +43,8 @@ public readonly struct BitMask : IReadOnlyCollection<byte>, IEquatable<BitMask>
     private static uint ResetLowestSetBit(uint x) =>
         x & (x - 1U); // Bmi1.X64.ResetLowestSetBit - leverages wraparound if x==0
 
+    public static BitMask operator ~(BitMask a) => new(~a._value);
+
     public static BitMask operator &(BitMask a, BitMask b) => new(a._value & b._value);
 
     public bool Equals(BitMask other) => _value == other._value;

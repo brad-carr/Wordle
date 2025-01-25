@@ -101,6 +101,7 @@ public sealed class Solver
                         {
                             solution = solution.SetCharAtPos(c, i);
                             remainingWords = remainingWords.Where(w => w[i] == c).ToArray();
+                            maybeCharsBySlot[i] = BitMask.Empty;
                         }
                         break;
 
@@ -155,10 +156,13 @@ public sealed class Solver
 
             AddCommonPositionalCharsToSolution(remainingWords, ref solution);
 
+            // Set possible chars per remaining slot
             foreach (var slot in solution.UnsolvedPositions())
             {
                 maybeCharsBySlot[slot] =
-                    remainingWords.Aggregate(new BitMask(), (cur, word) => cur.Set(word[slot]));
+                    remainingWords.Aggregate(new BitMask(), (cur, word) => cur.Set(word[slot]))
+                    & ~forbiddenCharsBySlot[slot];
+
             }
         }
 
